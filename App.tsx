@@ -30,8 +30,8 @@ import InfoCards from './components/InfoCards';
 import FeaturedVideo from './components/FeaturedVideo';
 import SplashScreen from './components/SplashScreen';
 import BrandReviews from './components/BrandReviews';
-// FIX: Changed back to a default import to resolve "does not provide an export named" error.
-import MockupGeneratorPage from './components/MockupGeneratorPage';
+// FIX: Changed to a named import to resolve the module error.
+import { MockupGeneratorPage } from './components/MockupGeneratorPage';
 import FeaturedPartners from './components/FeaturedPartners';
 import HowItWorks from './components/HowItWorks';
 import CustomizationShowcase from './components/CustomizationShowcase';

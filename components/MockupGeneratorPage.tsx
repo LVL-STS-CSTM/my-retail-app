@@ -1,6 +1,7 @@
+
 import React from 'react';
 
-const MockupGeneratorPage: React.FC = () => {
+export const MockupGeneratorPage: React.FC = () => {
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4 pt-20">
             <div className="text-center">
@@ -10,5 +11,3 @@ const MockupGeneratorPage: React.FC = () => {
         </div>
     );
 };
-
-export default MockupGeneratorPage;
