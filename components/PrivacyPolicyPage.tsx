@@ -52,7 +52,7 @@ const PrivacyPolicyPage: React.FC = () => {
                     <P>If you have questions or comments about this Privacy Policy, please contact us at:</P>
                     <P>LEVEL CUSTOMS APPAREL<br />
                     Email: <a href="mailto:contact@levelcustomsapparel.com" className="text-blue-600 hover:underline">contact@levelcustomsapparel.com</a>
-                    </p>
+                    </P>
                 </div>
             </div>
         </div>
