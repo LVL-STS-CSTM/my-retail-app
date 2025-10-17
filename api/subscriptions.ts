@@ -3,9 +3,8 @@ import { google } from 'googleapis';
 // This is a Vercel Serverless Function
 // Handles GET and POST for /api/subscriptions
 
-export const config = {
-  runtime: 'edge',
-};
+// NOTE: Removed `runtime: 'edge'` to use the default Node.js runtime,
+// which is required for the `googleapis` library.
 
 // Helper function to validate environment variables
 function getEnvVariable(name: string): string {
