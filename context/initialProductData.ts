@@ -44,4 +44,3 @@ export const initialProductsData: Product[] = ([
 ] as Omit<Product, 'displayOrder'>[]).map((p, index) => ({ ...p, displayOrder: index }));
 
 export const initialCollectionsData = Array.from(new Set(initialProductsData.map(p => p.categoryGroup))).sort();
-// NOTE: To keep the response concise, the full content of the product array is omitted but should be moved from the original context file.
