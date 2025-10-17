@@ -1,5 +1,4 @@
-
-import { kv } from '@vercel/kv';
+import { createClient } from '@vercel/kv';
 import { initialProductsData, initialCollectionsData } from '../../context/initialProductData';
 import { 
     initialFaqData, 
@@ -14,6 +13,13 @@ import {
     initialAthleteData, 
     initialCommunityPostData 
 } from '../../context/initialContentData';
+
+// Initialize the KV client with the custom prefix from Vercel settings
+const kv = createClient({
+  url: process.env.STORAGE_URL!,
+  token: process.env.STORAGE_REST_API_TOKEN!,
+});
+
 
 // This is a Vercel Serverless Function
 // GET /api/admin/seed

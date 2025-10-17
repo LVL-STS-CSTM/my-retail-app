@@ -1,9 +1,9 @@
 // This is a Vercel Serverless Function
 // POST /api/admin/login
 
-// NOTE: Removed `runtime: 'edge'` to use the default Node.js runtime.
-// This is to avoid a Vercel build error where this function was incorrectly
-// associated with Node.js-only modules from other API routes.
+export const config = {
+  runtime: 'nodejs',
+};
 
 export default async function handler(req: Request): Promise<Response> {
     if (req.method !== 'POST') {

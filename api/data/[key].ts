@@ -1,4 +1,11 @@
-import { kv } from '@vercel/kv';
+import { createClient } from '@vercel/kv';
+
+// Initialize the KV client with the custom prefix from Vercel settings
+const kv = createClient({
+  url: process.env.STORAGE_URL!,
+  token: process.env.STORAGE_REST_API_TOKEN!,
+});
+
 
 // This is a Vercel Serverless Function
 // It's a dynamic route that handles /api/data/[key]

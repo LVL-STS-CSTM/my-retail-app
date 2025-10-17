@@ -4,8 +4,9 @@ import { SubmittedQuote, QuoteStatus } from '../types';
 // This is a Vercel Serverless Function
 // Handles GET, POST, PUT for /api/quotes
 
-// NOTE: Removed `runtime: 'edge'` to use the default Node.js runtime,
-// which is required for the `googleapis` library.
+export const config = {
+  runtime: 'nodejs', // Explicitly set runtime for compatibility with googleapis
+};
 
 // Helper function to validate environment variables
 function getEnvVariable(name: string): string {
