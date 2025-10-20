@@ -1,4 +1,4 @@
-import { kv } from '@vercel/kv';
+import { createClient } from '@vercel/kv';
 
 // This is a Vercel Serverless Function
 // It's a dynamic route that handles /api/data/[key]
@@ -31,6 +31,11 @@ export default async function handler(req: Request): Promise<Response> {
     if (!key) {
         return new Response('Missing data key.', { status: 400 });
     }
+
+    const kv = createClient({
+      url: process.env.REDIS_URL!,
+      token: process.env.REDIS_TOKEN!,
+    });
 
     try {
         switch (req.method) {

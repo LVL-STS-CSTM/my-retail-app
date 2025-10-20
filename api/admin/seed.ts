@@ -1,4 +1,4 @@
-import { kv } from '@vercel/kv';
+import { createClient } from '@vercel/kv';
 import { initialProductsData, initialCollectionsData } from '../../context/initialProductData';
 import { 
     initialFaqData, 
@@ -61,6 +61,11 @@ export default async function handler(req: Request): Promise<Response> {
 
     // --- Seeding Logic ---
     try {
+        const kv = createClient({
+          url: process.env.REDIS_URL!,
+          token: process.env.REDIS_TOKEN!,
+        });
+
         const pipeline = kv.pipeline();
         let count = 0;
         
@@ -86,7 +91,11 @@ export default async function handler(req: Request): Promise<Response> {
 
     } catch (error: any) {
         console.error("Failed to seed database:", error);
-        return new Response(`<h1>Seeding Failed</h1><p>An error occurred: ${error.message}</p>`, { 
+        const errorMessage = error.message.includes("`token` is required")
+            ? "Connection failed. The `REDIS_TOKEN` environment variable is missing from your Vercel project settings. Please add it alongside your `REDIS_URL`."
+            : error.message;
+
+        return new Response(`<h1>Seeding Failed</h1><p>An error occurred: ${errorMessage}</p>`, { 
             status: 500, 
             headers: { 'Content-Type': 'text/html' }
         });
