@@ -1,4 +1,4 @@
-import { kv } from '@vercel/kv';
+import { createClient } from '@vercel/kv';
 
 // This is a Vercel Serverless Function
 // It's a dynamic route that handles /api/data/[key]
@@ -10,22 +10,30 @@ export const config = {
 
 // Helper to check for admin authentication
 async function isAuthenticated(req: Request): Promise<boolean> {
-    // In a real app, you'd validate a JWT or session cookie.
-    // For this project, we'll use a simple "bearer" token in the auth header
-    // that the client will store after logging in.
     const authHeader = req.headers.get('Authorization');
     if (authHeader?.startsWith('Bearer ')) {
         const token = authHeader.substring(7);
-        // This simple check confirms the user has logged in successfully during their session.
-        return token === `${process.env.ADMIN_USERNAME}:${process.env.ADMIN_PASSWORD}`;
+        const expectedToken = `${process.env.ADMIN_USERNAME}:${process.env.ADMIN_PASSWORD}`;
+        return token === expectedToken;
     }
     return false;
+}
+
+// Robust client getter to handle various environment variable naming schemes
+function getKvClient() {
+    const url = process.env.KV_REST_API_URL || process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL;
+    const token = process.env.KV_REST_API_TOKEN || process.env.REDIS_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    if (!url || !token) {
+        throw new Error('@vercel/kv: Missing required environment variables KV_REST_API_URL and KV_REST_API_TOKEN');
+    }
+
+    return createClient({ url, token });
 }
 
 
 export default async function handler(req: Request): Promise<Response> {
     const url = new URL(req.url);
-    // The 'key' is the dynamic part of the route, e.g., 'products'
     const key = url.pathname.split('/').pop();
 
     if (!key) {
@@ -33,6 +41,8 @@ export default async function handler(req: Request): Promise<Response> {
     }
 
     try {
+        const kv = getKvClient();
+        
         switch (req.method) {
             case 'GET':
                 const data = await kv.get(key);
@@ -51,7 +61,6 @@ export default async function handler(req: Request): Promise<Response> {
                 });
 
             case 'POST':
-                // This is a protected route, only admins can update data.
                 if (!(await isAuthenticated(req))) {
                     return new Response('Unauthorized', { status: 401 });
                 }

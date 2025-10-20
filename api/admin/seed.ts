@@ -1,4 +1,4 @@
-import { kv } from '@vercel/kv';
+import { createClient } from '@vercel/kv';
 import { initialProductsData, initialCollectionsData } from '../../context/initialProductData';
 import { 
     initialFaqData, 
@@ -38,6 +38,25 @@ const DATA_TO_SEED = {
     communityPosts: initialCommunityPostData,
 };
 
+// Robust client getter to handle various environment variable naming schemes
+function getKvClient() {
+    const url = process.env.KV_REST_API_URL || process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL;
+    const token = process.env.KV_REST_API_TOKEN || process.env.REDIS_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    if (!url || !token) {
+        // This specific error message is what the library throws, so we'll throw it ourselves.
+        throw new Error('@vercel/kv: Missing required environment variables KV_REST_API_URL and KV_REST_API_TOKEN');
+    }
+    
+    // The Upstash/Redis URL might be in the wrong format. The kv client expects an https URL.
+    if (!url.startsWith('https')) {
+      throw new Error(`Upstash Redis client was passed an invalid URL. You should pass a URL starting with https. Received: "${url}".`);
+    }
+
+    return createClient({ url, token });
+}
+
+
 export default async function handler(req: Request): Promise<Response> {
     // --- Basic Authentication Check ---
     const authHeader = req.headers.get('authorization');
@@ -48,7 +67,6 @@ export default async function handler(req: Request): Promise<Response> {
         });
     }
     
-    // FIX: Use atob() for Edge runtime compatibility instead of Buffer
     const auth = atob(authHeader.split(' ')[1]);
     const [user, pass] = auth.split(':');
     
@@ -61,6 +79,7 @@ export default async function handler(req: Request): Promise<Response> {
 
     // --- Seeding Logic ---
     try {
+        const kv = getKvClient();
         const pipeline = kv.pipeline();
         let count = 0;
         
