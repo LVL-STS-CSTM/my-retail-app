@@ -1,7 +1,4 @@
-// FIX: Import the pre-configured `kv` instance from `@vercel/kv` directly.
-// This resolves the type error where methods like `.get()` and `.set()` were not found
-// on the client created with `createClient`.
-import { kv } from '@vercel/kv';
+import { createClient } from '@vercel/kv';
 
 // This is a Vercel Serverless Function
 // It's a dynamic route that handles /api/data/[key]
@@ -10,6 +7,13 @@ import { kv } from '@vercel/kv';
 export const config = {
   runtime: 'edge',
 };
+
+// Manually create the client to use the environment variables from the user's project
+const kv = createClient({
+  url: process.env.REDIS_URL || '',
+  token: process.env.REDIS_TOKEN || '',
+});
+
 
 // Helper to check for admin authentication
 async function isAuthenticated(req: Request): Promise<boolean> {
