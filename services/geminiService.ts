@@ -1,4 +1,5 @@
 // This service now acts as a client-side wrapper for our backend's Gemini API endpoint.
+import { Message, Product } from '../types';
 
 /**
  * @description Generates a product description by calling our secure backend endpoint.
@@ -66,5 +67,40 @@ export const generateBrandReview = async (keywords: string): Promise<{ author: s
     } catch (error) {
         console.error("Error in generateBrandReview service:", error);
         throw error;
+    }
+};
+
+/**
+ * @description Gets a response from the AI Product Advisor.
+ * @param {Message[]} messages - The current conversation history.
+ * @param {Product[]} products - The full product catalogue for context.
+ * @returns {Promise<string>} The AI's response text.
+ */
+export const getAdvisorResponse = async (messages: Message[], products: Product[]): Promise<string> => {
+    try {
+        // This endpoint is public and does not require an auth token.
+        const response = await fetch('/api/gemini', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                type: 'advisor',
+                payload: { messages, products }
+            }),
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to get response from advisor.');
+        }
+
+        const data = await response.json();
+        return data.text;
+
+    } catch (error) {
+        console.error("Error in getAdvisorResponse service:", error);
+        // Return a user-friendly error message
+        return "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.";
     }
 };

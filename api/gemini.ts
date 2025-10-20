@@ -20,13 +20,11 @@ async function isAuthenticated(req: Request): Promise<boolean> {
 }
 
 export default async function handler(req: Request): Promise<Response> {
+    // For the AI Advisor, we don't require admin authentication.
+    const isPotentiallyAdminRequest = req.headers.get('Authorization')?.startsWith('Bearer ');
+
     if (req.method !== 'POST') {
         return new Response('Method Not Allowed', { status: 405 });
-    }
-
-    // This is a protected route, only admins can use the generator.
-    if (!(await isAuthenticated(req))) {
-        return new Response(JSON.stringify({ message: 'Unauthorized' }), { status: 401 });
     }
     
     // Get API Key from environment
@@ -40,6 +38,13 @@ export default async function handler(req: Request): Promise<Response> {
         const ai = new GoogleGenAI({ apiKey });
         const body = await req.json();
         const { type, payload } = body;
+
+        // Admin-only requests must be authenticated
+        if (type === 'description' || type === 'review') {
+            if (!(await isAuthenticated(req))) {
+                return new Response(JSON.stringify({ message: 'Unauthorized' }), { status: 401 });
+            }
+        }
 
         if (type === 'description') {
             const { productName, category } = payload;
@@ -94,6 +99,47 @@ export default async function handler(req: Request): Promise<Response> {
             
             // The response.text is already a JSON string because of the config.
             return new Response(response.text, { 
+                status: 200,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        
+        } else if (type === 'advisor') {
+            const { messages, products } = payload;
+            if (!messages || !products) {
+                return new Response(JSON.stringify({ message: 'Messages and product context are required.' }), { status: 400 });
+            }
+
+            const productContext = JSON.stringify(
+                products.map((p: any) => ({ 
+                    id: p.id, 
+                    name: p.name, 
+                    description: p.description,
+                    category: p.category,
+                    categoryGroup: p.categoryGroup,
+                    gender: p.gender,
+                }))
+            );
+
+            const conversationHistory = messages
+                .map((m: any) => `${m.sender === 'user' ? 'User' : 'Advisor'}: ${m.text}`)
+                .join('\n\n');
+
+            const prompt = `Based on this, provide a helpful and relevant response to the last user message.`;
+            
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: [
+                    { role: 'user', parts: [{ text: conversationHistory }, { text: prompt }] }
+                ],
+                config: {
+                    systemInstruction: `You are a friendly and professional Product Advisor for LEVEL CUSTOMS, a custom apparel company. Your goal is to help users find the perfect product for their needs from the provided catalogue. Be helpful, concise, and guide users towards making a selection. If a user asks about a product, use its name to find it in the catalogue. Do not invent products or features not listed in the provided data. If you are unsure, ask clarifying questions or suggest browsing the full catalogue.
+
+                    Here is the available product catalogue in JSON format:
+                    ${productContext}`
+                }
+            });
+
+            return new Response(JSON.stringify({ text: response.text.trim() }), { 
                 status: 200,
                 headers: { 'Content-Type': 'application/json' }
             });

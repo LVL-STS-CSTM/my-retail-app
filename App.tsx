@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Product, View, HeroContent, InfoCard, BrandReview, PlatformRating } from './types';
 import { QuoteProvider } from './context/CartContext';
@@ -41,6 +42,7 @@ import AthletesPage from './components/AthletesPage';
 import CommunityPage from './components/CommunityPage';
 import WhyChooseUs from './components/WhyChooseUs';
 import HowWeWorkPage from './components/HowWeWorkPage';
+import AiAdvisor from './components/AiAdvisor';
 
 const useOnScreen = (ref: React.RefObject<HTMLElement>, rootMargin: string = '0px 0px -150px 0px'): boolean => {
     const [isIntersecting, setIntersecting] = useState(false);
@@ -101,241 +103,232 @@ const AppContent: React.FC = () => {
 
     // On initial mount, manage splash screen, scroll, and subscription modal timers.
     useEffect(() => {
-        // Splash screen fade-out timer
-        const fadeTimer = setTimeout(() => {
-            setIsAppLoading(false);
-        }, 500);
-
-        // Splash screen unmount timer
-        const unmountTimer = setTimeout(() => {
-            setIsSplashVisible(false);
-        }, 2500);
-
-        // Header transparency scroll listener
         const handleScroll = () => {
-            const scrollY = window.scrollY;
-            setIsScrolled(scrollY > 10);
+            setIsScrolled(window.scrollY > 20);
         };
-        window.addEventListener('scroll', handleScroll);
 
-        // Subscription Modal Pop-up Logic
-        const hasDismissed = localStorage.getItem('subscriptionModalDismissed');
-        let subscriptionTimer: ReturnType<typeof setTimeout>;
-        if (!hasDismissed) {
-            subscriptionTimer = setTimeout(() => {
+        // Splash screen logic
+        const splashTimer = setTimeout(() => {
+            setIsAppLoading(false); // Start fading out
+        }, 1500);
+        const visibilityTimer = setTimeout(() => {
+            setIsSplashVisible(false); // Remove from DOM
+        }, 3000); // 1.5s display + 1.5s fade
+
+        // Subscription modal logic
+        const subscriptionTimer = setTimeout(() => {
+            if (!localStorage.getItem('subscriptionModalDismissed')) {
                 setIsSubscriptionModalOpen(true);
-            }, 7000); // Show modal after 7 seconds
-        }
-
-        // Cleanup on unmount
-        return () => {
-            clearTimeout(fadeTimer);
-            clearTimeout(unmountTimer);
-            window.removeEventListener('scroll', handleScroll);
-            if (subscriptionTimer) {
-                clearTimeout(subscriptionTimer);
             }
+        }, 8000);
+
+        window.addEventListener('scroll', handleScroll);
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            clearTimeout(splashTimer);
+            clearTimeout(visibilityTimer);
+            clearTimeout(subscriptionTimer);
         };
     }, []);
 
-    // Function to display a toast notification for a short period.
-    const showToast = (message: string) => {
-        setToastMessage(message);
-        setTimeout(() => {
-            setToastMessage('');
-        }, 3000); // Hide toast after 3 seconds.
+    const handleNavigate = (page: View, value: string | null = null) => {
+        if (page === 'catalogue' && value) {
+            const isGroup = collections.includes(value);
+            const isGender = ['Men', 'Women', 'Unisex'].includes(value);
+            if (isGroup) {
+                setCatalogueFilter({ type: 'group', value });
+            } else if (isGender) {
+                setCatalogueFilter({ type: 'gender', value });
+            } else {
+                setCatalogueFilter({ type: 'category', value });
+            }
+        } else {
+            setCatalogueFilter(null);
+        }
+
+        if (page === 'product' && value) {
+            const product = allProducts.find(p => p.id === value);
+            setSelectedProduct(product || null);
+        }
+
+        setView(page);
+        window.scrollTo(0, 0);
     };
 
-    // Function to handle clicking on a product card.
-    // It sets the selected product and switches to the product detail view.
     const handleProductClick = (product: Product) => {
         setSelectedProduct(product);
         setView('product');
-        setIsSearchModalOpen(false); // Close search modal if open
-        window.scrollTo(0, 0); // Scroll to top of the page
+        window.scrollTo(0, 0);
     };
-    
-    // Handles the submission of the admin password.
+
     const handlePasswordSubmit = async (password: string, username: string) => {
         const success = await login(username, password);
         if (success) {
             setIsPasswordModalOpen(false);
             setView('admin');
-            showToast('Admin login successful!');
         } else {
-            showToast('Invalid admin credentials.');
+            setToastMessage("Invalid credentials.");
         }
     };
 
-    // Custom navigation handler for all internal links.
-    const handleNavigate = (page: View, filterValue: string | null = null) => {
-        if (page === 'admin') {
-            if (isAuthenticated) {
-                setView('admin');
-            } else {
-                setIsPasswordModalOpen(true);
-            }
-        } else {
-            setView(page);
-        }
-
-        if (page === 'catalogue' && filterValue) {
-            const productWithCategory = allProducts.find(p => p.category === filterValue);
-            if (productWithCategory) {
-                setCatalogueFilter({ type: 'category', value: filterValue });
-            } else if (collections.includes(filterValue)) {
-                setCatalogueFilter({ type: 'group', value: filterValue });
-            } else if (['Men', 'Women', 'Unisex'].includes(filterValue)) {
-                setCatalogueFilter({ type: 'gender', value: filterValue as 'Men' | 'Women' | 'Unisex' });
-            } else {
-                setCatalogueFilter(null);
-            }
-        } else if (page !== 'catalogue') {
-            setCatalogueFilter(null);
-        }
-        
-        window.scrollTo(0, 0);
-    };
-
-    // Handler for info card clicks
     const handleCardClick = (card: InfoCard) => {
         if (card.linkType === 'page') {
             handleNavigate(card.linkValue as View);
         } else if (card.linkType === 'modal') {
-            if (card.linkValue === 'subscribe') {
-                setIsSubscriptionModalOpen(true);
-            } else if (card.linkValue === 'search') {
-                setIsSearchModalOpen(true);
-            }
+            if (card.linkValue === 'subscribe') setIsSubscriptionModalOpen(true);
+            if (card.linkValue === 'search') setIsSearchModalOpen(true);
         } else if (card.linkType === 'external') {
             window.open(card.linkValue, '_blank', 'noopener,noreferrer');
         }
     };
 
-    // FIX: Added a return statement with the main JSX structure for the app.
-    // This resolves the error "Type '() => void' is not assignable to type 'FC<{}>'".
-    return (
-        <div className={`font-sans antialiased text-gray-800 bg-white transition-opacity duration-500 ${isDataLoading && isSplashVisible ? 'opacity-0' : 'opacity-100'}`}>
-            {isSplashVisible && <SplashScreen isFadingOut={!isAppLoading} />}
-            
-            {!isDataLoading && (
-                <>
-                    <Header 
+    const renderView = () => {
+        if (view === 'admin' && !isAuthenticated) {
+            setIsPasswordModalOpen(true);
+            // Show homepage content while password modal is open
+            return renderHomePage();
+        }
+
+        switch (view) {
+            case 'home':
+                return renderHomePage();
+            case 'product':
+                return selectedProduct ? (
+                    <ProductPage
+                        product={selectedProduct}
                         onNavigate={handleNavigate}
-                        onQuoteClick={() => setIsQuoteModalOpen(true)}
-                        onSearchClick={() => setIsSearchModalOpen(true)}
-                        onSubscribeClick={() => setIsSubscriptionModalOpen(true)}
-                        view={view}
-                        catalogueFilter={catalogueFilter}
-                        isScrolled={isScrolled}
-                    />
-    
-                    <main className="pt-14 bg-white">
-                        {view === 'home' && (
-                            <>
-                                {heroContents.length > 0 && heroContents.sort((a,b) => a.displayOrder - b.displayOrder).map((hero, index) => (
-                                    <React.Fragment key={hero.id}>
-                                        <Hero 
-                                            isFirst={index === 0}
-                                            onNavigate={handleNavigate}
-                                            {...hero}
-                                        />
-                                        {index === 0 && hero.featuredProductIds && hero.featuredProductIds.length > 0 && allProducts.length > 0 && (
-                                            <div className="bg-white">
-                                                <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8 text-center">
-                                                    <h2 className="text-3xl font-oswald uppercase tracking-wider text-gray-900">{hero.featuredProductsTitle || 'Featured Products'}</h2>
-                                                </div>
-                                                <ProductGrid
-                                                    products={allProducts.filter(p => hero.featuredProductIds?.includes(p.id))}
-                                                    onProductClick={handleProductClick}
-                                                />
-                                            </div>
-                                        )}
-                                    </React.Fragment>
-                                ))}
-                                
-                                <InfoCards cards={infoCards} onCardClick={handleCardClick} />
-    
-                                {featuredVideoContent && featuredVideoContent.isVisible && <FeaturedVideo {...featuredVideoContent} />}
-    
-                                <BrandReviews brandReviews={brandReviews} platformRatings={platformRatings} />
-    
-                                {partners.length > 0 && <FeaturedPartners partners={partners.slice(0, 12)} />}
-    
-                                <HowItWorks />
-    
-                                <CustomizationShowcase />
-                                
-                                <WhyChooseUs />
-    
-                                <CallToAction onNavigate={handleNavigate} />
-                            </>
-                        )}
-    
-                        {view === 'product' && selectedProduct && (
-                            <ProductPage 
-                                product={selectedProduct} 
-                                onNavigate={handleNavigate} 
-                                showToast={showToast} 
-                                materials={materials}
-                                allProducts={allProducts}
-                                onProductClick={handleProductClick}
-                            />
-                        )}
-                        
-                        {view === 'catalogue' && <CataloguePage products={allProducts} onProductClick={handleProductClick} initialFilter={catalogueFilter} />}
-                        {view === 'about' && <AboutPage onNavigate={handleNavigate} />}
-                        {view === 'partners' && <PartnersPage onNavigate={handleNavigate} />}
-                        {view === 'contact' && <ContactPage showToast={showToast} />}
-                        {view === 'faq' && <FaqPage faqData={faqData} />}
-                        {view === 'services' && <ServicesPage onNavigate={handleNavigate} />}
-                        {view === 'terms-of-service' && <TermsOfServicePage />}
-                        {view === 'return-policy' && <ReturnPolicyPage />}
-                        {view === 'privacy-policy' && <PrivacyPolicyPage />}
-                        {view === 'materials' && <FabricsPage />}
-                        {view === 'how-we-work' && <HowWeWorkPage />}
-                        {view === 'mockup-generator' && <MockupGeneratorPage />}
-                        {view === 'athletes' && <AthletesPage />}
-                        {view === 'community' && <CommunityPage onNavigate={handleNavigate} />}
-    
-                        {view === 'admin' && (
-                            isAuthenticated ? <AdminDashboard /> : <div className="p-16 text-center"><p>You must be logged in to view the admin dashboard.</p><Button variant="solid" className="mt-4" onClick={() => setIsPasswordModalOpen(true)}>Admin Login</Button></div>
-                        )}
-                    </main>
-    
-                    {view !== 'admin' && <Footer onNavigate={handleNavigate} />}
-    
-                    <QuoteModal isOpen={isQuoteModalOpen} onClose={() => setIsQuoteModalOpen(false)} showToast={showToast} />
-                    <SearchModal 
-                        isOpen={isSearchModalOpen} 
-                        onClose={() => setIsSearchModalOpen(false)} 
-                        products={allProducts}
-                        onProductClick={handleProductClick}
-                        onNavigate={handleNavigate}
-                        collections={collections}
-                        faqs={faqData}
+                        showToast={setToastMessage}
                         materials={materials}
+                        allProducts={allProducts}
+                        onProductClick={handleProductClick}
                     />
-                    <PasswordModal 
-                        isOpen={isPasswordModalOpen}
-                        onClose={() => setIsPasswordModalOpen(false)}
-                        onSubmit={handlePasswordSubmit}
-                    />
-                    <SubscriptionModal 
-                        isOpen={isSubscriptionModalOpen}
-                        onClose={() => setIsSubscriptionModalOpen(false)}
-                        showToast={showToast}
-                    />
-    
-                    {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage('')} />}
-                </>
-            )}
+                ) : (
+                    <div className="text-center py-20">Product not found.</div>
+                );
+            case 'catalogue':
+                return <CataloguePage products={allProducts} onProductClick={handleProductClick} initialFilter={catalogueFilter} />;
+            case 'about':
+                return <AboutPage onNavigate={handleNavigate} />;
+            case 'partners':
+                return <PartnersPage onNavigate={handleNavigate} />;
+            case 'contact':
+                return <ContactPage showToast={setToastMessage} />;
+            case 'faq':
+                return <FaqPage faqData={faqData} />;
+            case 'admin':
+                return isAuthenticated ? <AdminDashboard /> : renderHomePage();
+            case 'services':
+                return <ServicesPage onNavigate={handleNavigate} />;
+            case 'terms-of-service':
+                return <TermsOfServicePage />;
+            case 'return-policy':
+                return <ReturnPolicyPage />;
+            case 'privacy-policy':
+                return <PrivacyPolicyPage />;
+            case 'materials':
+                return <FabricsPage />;
+            case 'mockup-generator':
+                return <MockupGeneratorPage />;
+            case 'athletes':
+                return <AthletesPage />;
+            case 'community':
+                return <CommunityPage onNavigate={handleNavigate} />;
+            case 'how-we-work':
+                return <HowWeWorkPage />;
+            default:
+                return <div className="text-center py-20">Page not found</div>;
+        }
+    };
+
+    const renderHomePage = () => {
+        const homeHero = heroContents.find(h => h.displayOrder === 0);
+        const secondaryHeroes = heroContents.filter(h => h.displayOrder > 0).sort((a, b) => a.displayOrder - b.displayOrder);
+        const homeFeaturedProducts = homeHero?.featuredProductIds?.map(id => allProducts.find(p => p.id === id)).filter(Boolean) as Product[] || [];
+
+        return (
+            <>
+                {homeHero && <Hero {...homeHero} onNavigate={handleNavigate} isFirst={true} />}
+                {homeFeaturedProducts.length > 0 && (
+                     <div className="bg-white">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                            <h2 className="text-2xl font-bold tracking-tight text-gray-900 text-center mb-8">{homeHero?.featuredProductsTitle || 'Featured Products'}</h2>
+                            <ProductGrid products={homeFeaturedProducts} onProductClick={handleProductClick} />
+                        </div>
+                    </div>
+                )}
+                <InfoCards cards={infoCards} onCardClick={handleCardClick} />
+                <WhyChooseUs />
+                {secondaryHeroes.map((hero) => (
+                    <Hero key={hero.id} {...hero} onNavigate={handleNavigate} isFirst={false} />
+                ))}
+                <HowItWorks />
+                {featuredVideoContent?.isVisible && <FeaturedVideo {...featuredVideoContent} />}
+                <CustomizationShowcase />
+                <BrandReviews brandReviews={brandReviews} platformRatings={platformRatings} />
+                <FeaturedPartners partners={partners} />
+                <CallToAction onNavigate={handleNavigate} />
+            </>
+        );
+    };
+
+    return (
+        <div className="font-sans">
+            {isSplashVisible && <SplashScreen isFadingOut={!isAppLoading && !isDataLoading} />}
+            {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage('')} />}
+
+            <Header
+                onNavigate={handleNavigate}
+                onQuoteClick={() => setIsQuoteModalOpen(true)}
+                onSearchClick={() => setIsSearchModalOpen(true)}
+                onSubscribeClick={() => setIsSubscriptionModalOpen(true)}
+                view={view}
+                catalogueFilter={catalogueFilter}
+                isScrolled={isScrolled}
+            />
+
+            <main className={`transition-opacity duration-500 ${isAppLoading || isDataLoading ? 'opacity-0' : 'opacity-100'} pt-14`}>
+                {renderView()}
+            </main>
+
+            <Footer onNavigate={handleNavigate} />
+
+            <QuoteModal isOpen={isQuoteModalOpen} onClose={() => setIsQuoteModalOpen(false)} showToast={setToastMessage} />
+            
+            <SearchModal 
+                isOpen={isSearchModalOpen}
+                onClose={() => setIsSearchModalOpen(false)}
+                products={allProducts}
+                onProductClick={(product) => {
+                    handleProductClick(product);
+                    setIsSearchModalOpen(false);
+                }}
+                onNavigate={(page, value) => {
+                    handleNavigate(page, value);
+                    setIsSearchModalOpen(false);
+                }}
+                collections={collections}
+                faqs={faqData}
+                materials={materials}
+            />
+
+            <PasswordModal
+                isOpen={isPasswordModalOpen}
+                onClose={() => setIsPasswordModalOpen(false)}
+                onSubmit={handlePasswordSubmit}
+            />
+            
+            <SubscriptionModal 
+                isOpen={isSubscriptionModalOpen} 
+                onClose={() => setIsSubscriptionModalOpen(false)}
+                showToast={setToastMessage}
+            />
+            
+            <AiAdvisor allProducts={allProducts} />
         </div>
     );
 };
 
-// The App wrapper that provides all necessary contexts to the AppContent.
-const App = () => (
+const App: React.FC = () => (
     <DataProvider>
         <AdminProvider>
             <QuoteProvider>
@@ -345,5 +338,4 @@ const App = () => (
     </DataProvider>
 );
 
-// FIX: Added a default export to resolve the "has no default export" error in index.tsx.
 export default App;
