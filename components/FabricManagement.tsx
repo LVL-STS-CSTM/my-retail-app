@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
 import { Material } from '../types';
-import MaterialFormModal from './FabricFormModal';
+import FabricFormModal from './FabricFormModal';
 
-const MaterialManagement: React.FC = () => {
+const FabricManagement: React.FC = () => {
     const { materials, updateData } = useData();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [materialToEdit, setMaterialToEdit] = useState<Material | null>(null);
@@ -70,7 +71,7 @@ const MaterialManagement: React.FC = () => {
                 </div>
             </div>
             {isModalOpen && (
-                <MaterialFormModal
+                <FabricFormModal
                     isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
                     materialToEdit={materialToEdit}
@@ -80,4 +81,4 @@ const MaterialManagement: React.FC = () => {
     );
 };
 
-export default MaterialManagement;
+export default FabricManagement;

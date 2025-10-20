@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, KeyboardEvent } from 'react';
 import { Material } from '../types';
 import { useData } from '../context/DataContext';
@@ -17,7 +18,7 @@ const emptyMaterial: Omit<Material, 'id'> = {
     careImageUrl: '',
 };
 
-const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ isOpen, onClose, materialToEdit }) => {
+const FabricFormModal: React.FC<MaterialFormModalProps> = ({ isOpen, onClose, materialToEdit }) => {
     const { materials, updateData } = useData();
     const [formData, setFormData] = useState<Material | Omit<Material, 'id'>>(materialToEdit || emptyMaterial);
     const [featureInput, setFeatureInput] = useState('');
@@ -174,4 +175,4 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ isOpen, onClose, 
     );
 };
 
-export default MaterialFormModal;
+export default FabricFormModal;

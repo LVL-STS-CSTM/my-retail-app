@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useData } from '../context/DataContext';
 import { Material } from '../types';
@@ -64,7 +65,7 @@ const MaterialSection: React.FC<{ material: Material; index: number; openCareMod
 };
 
 
-const MaterialsPage: React.FC = () => {
+const FabricsPage: React.FC = () => {
     const { materials } = useData();
     const [isCareModalOpen, setIsCareModalOpen] = useState(false);
     const [selectedCareImage, setSelectedCareImage] = useState<string | undefined>(undefined);
@@ -143,4 +144,4 @@ const MaterialsPage: React.FC = () => {
     );
 };
 
-export default MaterialsPage;
+export default FabricsPage;

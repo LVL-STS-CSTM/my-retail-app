@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuote } from '../context/CartContext';
 import { SearchIcon, UserIcon, CartIcon, MenuIcon, CloseIcon, ChevronDownIcon } from './icons';
@@ -83,6 +84,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
     const exploreLinks = useMemo(() => [
         { label: 'About Level', view: 'about' as View },
         { label: 'Contact', view: 'contact' as View },
+        { label: 'How We Work', view: 'how-we-work' as View },
         { label: 'Mockup Studio', view: 'mockup-generator' as View },
         { label: 'Our Materials', view: 'materials' as View },
         { label: 'Our Partners', view: 'partners' as View },

@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAdmin } from '../context/AdminContext';
 import { SubmittedQuote, QuoteStatus } from '../types';
@@ -9,7 +10,7 @@ import HeroManagement from './HeroManagement';
 import CollectionManagement from './CollectionManagement';
 import PartnerManagement from './PartnerManagement';
 import HowWeWorkManagement from './HowWeWorkManagement';
-import MaterialManagement from './FabricManagement';
+import FabricManagement from './FabricManagement';
 import SubscriptionManagement from './SubscriptionManagement';
 import EmailMarketing from './EmailMarketing';
 import InfoCardManagement from './InfoCardManagement';
@@ -265,7 +266,7 @@ const AdminDashboard: React.FC = () => {
                         {contentSubTab === 'banners' && <HeroManagement />}
                         {contentSubTab === 'partners' && <PartnerManagement />}
                         {contentSubTab === 'how-we-work' && <HowWeWorkManagement />}
-                        {contentSubTab === 'materials' && <MaterialManagement />}
+                        {contentSubTab === 'materials' && <FabricManagement />}
                         {contentSubTab === 'info-cards' && <InfoCardManagement />}
                         {contentSubTab === 'featured-video' && <FeaturedVideoManagement />}
                         {contentSubTab === 'brand-reviews' && <BrandReviewManagement />}

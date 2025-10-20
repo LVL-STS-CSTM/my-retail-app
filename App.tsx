@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Product, View, HeroContent, InfoCard, BrandReview, PlatformRating } from './types';
 import { QuoteProvider } from './context/CartContext';
@@ -24,7 +25,7 @@ import ServicesPage from './components/ServicesPage';
 import TermsOfServicePage from './components/TermsOfServicePage';
 import ReturnPolicyPage from './components/ReturnPolicyPage';
 import PrivacyPolicyPage from './components/PrivacyPolicyPage';
-import MaterialsPage from './components/FabricsPage';
+import FabricsPage from './components/FabricsPage';
 import SubscriptionModal from './components/SubscriptionModal';
 import InfoCards from './components/InfoCards';
 import FeaturedVideo from './components/FeaturedVideo';
@@ -39,6 +40,7 @@ import CallToAction from './components/CallToAction';
 import AthletesPage from './components/AthletesPage';
 import CommunityPage from './components/CommunityPage';
 import WhyChooseUs from './components/WhyChooseUs';
+import HowWeWorkPage from './components/HowWeWorkPage';
 
 const useOnScreen = (ref: React.RefObject<HTMLElement>, rootMargin: string = '0px 0px -150px 0px'): boolean => {
     const [isIntersecting, setIntersecting] = useState(false);
@@ -290,7 +292,8 @@ const AppContent: React.FC = () => {
                         {view === 'terms-of-service' && <TermsOfServicePage />}
                         {view === 'return-policy' && <ReturnPolicyPage />}
                         {view === 'privacy-policy' && <PrivacyPolicyPage />}
-                        {view === 'materials' && <MaterialsPage />}
+                        {view === 'materials' && <FabricsPage />}
+                        {view === 'how-we-work' && <HowWeWorkPage />}
                         {view === 'mockup-generator' && <MockupGeneratorPage />}
                         {view === 'athletes' && <AthletesPage />}
                         {view === 'community' && <CommunityPage onNavigate={handleNavigate} />}

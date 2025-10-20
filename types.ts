@@ -98,7 +98,7 @@ export interface Material {
  * @description Defines the possible page views for the application's router.
  */
 // FIX: Added 'community' to View type
-export type View = 'home' | 'product' | 'catalogue' | 'about' | 'partners' | 'contact' | 'faq' | 'admin' | 'services' | 'terms-of-service' | 'return-policy' | 'privacy-policy' | 'materials' | 'mockup-generator' | 'athletes' | 'community';
+export type View = 'home' | 'product' | 'catalogue' | 'about' | 'partners' | 'contact' | 'faq' | 'admin' | 'services' | 'terms-of-service' | 'return-policy' | 'privacy-policy' | 'materials' | 'mockup-generator' | 'athletes' | 'community' | 'how-we-work';
 
 /**
  * @interface Message
