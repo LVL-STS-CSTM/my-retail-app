@@ -1,11 +1,7 @@
-import { createClient } from '@vercel/kv';
-
-// Initialize the KV client with the custom prefix from Vercel settings
-const kv = createClient({
-  url: process.env.STORAGE_URL!,
-  token: process.env.STORAGE_REST_API_TOKEN!,
-});
-
+// FIX: Import the pre-configured `kv` instance from `@vercel/kv` directly.
+// This resolves the type error where methods like `.get()` and `.set()` were not found
+// on the client created with `createClient`.
+import { kv } from '@vercel/kv';
 
 // This is a Vercel Serverless Function
 // It's a dynamic route that handles /api/data/[key]
