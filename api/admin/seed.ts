@@ -1,4 +1,4 @@
-import { createClient } from '@vercel/kv';
+import { kv } from '@vercel/kv';
 import { initialProductsData, initialCollectionsData } from '../../context/initialProductData';
 import { 
     initialFaqData, 
@@ -21,13 +21,6 @@ import {
 export const config = {
   runtime: 'edge',
 };
-
-// Manually create the client to use the environment variables from the user's project
-const kv = createClient({
-  url: process.env.REDIS_URL || '',
-  token: process.env.REDIS_TOKEN || '',
-});
-
 
 const DATA_TO_SEED = {
     products: initialProductsData,

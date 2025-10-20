@@ -1,4 +1,4 @@
-import { createClient } from '@vercel/kv';
+import { kv } from '@vercel/kv';
 
 // This is a Vercel Serverless Function
 // It's a dynamic route that handles /api/data/[key]
@@ -7,13 +7,6 @@ import { createClient } from '@vercel/kv';
 export const config = {
   runtime: 'edge',
 };
-
-// Manually create the client to use the environment variables from the user's project
-const kv = createClient({
-  url: process.env.REDIS_URL || '',
-  token: process.env.REDIS_TOKEN || '',
-});
-
 
 // Helper to check for admin authentication
 async function isAuthenticated(req: Request): Promise<boolean> {
