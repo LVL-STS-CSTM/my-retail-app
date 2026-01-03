@@ -1,6 +1,6 @@
 {
-  "name": "Copy of 2.0 LEVEL CUSTOM APPAREL",
-  "description": "A catalogue for LEVEL CUSTOMS' custom merchandise. Browse our collection of apparel, drinkware, accessories, and more, and submit a request for a custom quote for your business needs.",
+  "name": "LEVEL CUSTOM APPAREL v2.0 (Production)",
+  "description": "High-performance B2B apparel commissioning platform powered by Gemini AI and Cloudflare Workers.",
   "requestFramePermissions": [],
   "prompt": ""
 }

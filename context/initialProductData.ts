@@ -1,3 +1,4 @@
+
 import { Product } from '../types';
 
 // The initial data that will be loaded if the database is empty.
@@ -37,8 +38,6 @@ export const initialProductsData: Product[] = ([
         categoryGroup: 'Apparel',
         gender: 'Unisex',
         materialId: 'fabric-1',
-        mockupImageUrl: "https://i.pinimg.com/736x/4a/94/22/4a94225d4321ecc951e8af6634109137.jpg",
-        mockupArea: { top: 30, left: 35, width: 30, height: 40 },
     },
     // ... (rest of initial product data objects)
 ] as Omit<Product, 'displayOrder'>[]).map((p, index) => ({ ...p, displayOrder: index }));

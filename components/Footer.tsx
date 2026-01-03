@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { FacebookIcon, InstagramIcon, ThreadsIcon, TiktokIcon, LinkedinIcon, MailIcon, YouTubeIcon } from './icons';
 import { View } from '../types';
@@ -40,7 +41,7 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                             <li><button onClick={(e) => handleNavClick(e, 'contact')} className="hover:text-white transition-colors text-left w-full">LOCATION</button></li>
                         </ul>
                     </div>
-                    {/* Services Section */}
+                    {/* Support Section */}
                     <div className="flex-1 m-2.5 min-w-[160px]">
                         <h4 className="font-oswald text-white mb-2.5 uppercase text-lg tracking-wide">SUPPORT</h4>
                         <ul className="list-none p-0 m-0 text-xs space-y-1.5 uppercase">
@@ -48,8 +49,13 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                             <li><button onClick={(e) => handleNavClick(e, 'terms-of-service')} className="hover:text-white transition-colors text-left w-full">TERMS OF SERVICE</button></li>
                             <li><button onClick={(e) => handleNavClick(e, 'return-policy')} className="hover:text-white transition-colors text-left w-full">RETURN AND EXCHANGE POLICY</button></li>
                             <li><button onClick={(e) => handleNavClick(e, 'privacy-policy')} className="hover:text-white transition-colors text-left w-full">PRIVACY POLICY</button></li>
-                            <li className="h-4 cursor-pointer">
-                                <button onClick={(e) => handleNavClick(e, 'admin')} className="w-full h-full" aria-label="Admin Access"></button>
+                            {/* Hidden Admin Entry Point */}
+                            <li className="h-4">
+                                <button 
+                                    onClick={(e) => handleNavClick(e, 'admin')} 
+                                    className="w-full h-full cursor-default hover:cursor-pointer opacity-0" 
+                                    aria-label="Admin Access"
+                                ></button>
                             </li>
                         </ul>
                     </div>

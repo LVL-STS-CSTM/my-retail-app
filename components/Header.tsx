@@ -1,11 +1,9 @@
 
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuote } from '../context/CartContext';
 import { SearchIcon, UserIcon, CartIcon, MenuIcon, CloseIcon, ChevronDownIcon } from './icons';
 import { View } from '../types';
 import Accordion from './Accordion';
-// FIX: Correct import from DataContext
 import { useData } from '../context/DataContext';
 
 // A reusable icon button component for the header.
@@ -53,7 +51,6 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
     const [isExploreMenuOpen, setIsExploreMenuOpen] = useState(false);
 
     const { quoteItems } = useQuote();
-    // FIX: Use useData() hook
     const { products, collections } = useData();
 
     // Calculate the number of unique item types in the quote list.
@@ -85,7 +82,6 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
         { label: 'About Level', view: 'about' as View },
         { label: 'Contact', view: 'contact' as View },
         { label: 'How We Work', view: 'how-we-work' as View },
-        { label: 'Mockup Studio', view: 'mockup-generator' as View },
         { label: 'Our Materials', view: 'materials' as View },
         { label: 'Our Partners', view: 'partners' as View },
         { label: 'Our Services', view: 'services' as View },

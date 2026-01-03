@@ -1,5 +1,4 @@
 
-
 /**
  * @interface Color
  * @description Represents a color option for a product.
@@ -42,8 +41,6 @@ export interface ProductSize {
  * @property {string} [materialId] - Optional ID to link to a specific material technology.
  * @property {number} [moq] - Optional per-product Minimum Order Quantity.
  * @property {number} [price] - Optional price for sorting purposes.
- * @property {string} [mockupImageUrl] - Optional URL for a "flat-lay" image used in the mockup generator.
- * @property {{ top: number; left: number; width: number; height: number; }} [mockupArea] - Optional definition of the printable area (in %) for the mockup generator.
  */
 export interface Product {
     id: string;
@@ -61,8 +58,9 @@ export interface Product {
     materialId?: string;
     moq?: number;
     price?: number;
+    // FIX: Added missing properties for the Mockup Generator feature
     mockupImageUrl?: string;
-    mockupArea?: { top: number; left: number; width: number; height: number; };
+    mockupArea?: { top: number; left: number; width: number; height: number };
 }
 
 /**
@@ -97,8 +95,8 @@ export interface Material {
  * @type View
  * @description Defines the possible page views for the application's router.
  */
-// FIX: Added 'community' to View type
-export type View = 'home' | 'product' | 'catalogue' | 'about' | 'partners' | 'contact' | 'faq' | 'admin' | 'services' | 'terms-of-service' | 'return-policy' | 'privacy-policy' | 'materials' | 'mockup-generator' | 'athletes' | 'community' | 'how-we-work';
+// FIX: Added 'mockup-generator' to the View union type
+export type View = 'home' | 'product' | 'catalogue' | 'about' | 'partners' | 'contact' | 'faq' | 'admin' | 'services' | 'terms-of-service' | 'return-policy' | 'privacy-policy' | 'materials' | 'athletes' | 'community' | 'how-we-work' | 'mockup-generator';
 
 /**
  * @interface Message
@@ -290,7 +288,6 @@ export interface PlatformRating {
     isVisible: boolean;
 }
 
-// FIX: Added Athlete interface
 /**
  * @interface Athlete
  * @description Represents a sponsored athlete.
@@ -304,7 +301,6 @@ export interface Athlete {
     instagramHandle?: string;
 }
 
-// FIX: Added CommunityPost types
 /**
  * @type CommunityPostSource
  * @description The source of a community post.

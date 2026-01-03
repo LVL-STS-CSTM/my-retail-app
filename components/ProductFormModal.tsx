@@ -1,10 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Product, Color, ProductSize } from '../types';
-// FIX: Corrected context import
 import { useData } from '../context/DataContext';
 import { CloseIcon, PlusIcon, TrashIcon, SparklesIcon } from './icons';
-// FIX: Corrected service import path
 import { generateProductDescription } from '../services/geminiService';
 import Accordion from './Accordion';
 
@@ -51,12 +49,9 @@ const emptyProduct: Omit<Product, 'id'> = {
     categoryGroup: '',
     gender: 'Unisex',
     displayOrder: 0,
-    mockupImageUrl: '',
-    mockupArea: { top: 25, left: 25, width: 50, height: 50},
 };
 
 const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, productToEdit }) => {
-    // FIX: Use useData() hook
     const { products, collections, materials, updateData } = useData();
     const [formData, setFormData] = useState<Product | Omit<Product, 'id'>>(productToEdit || emptyProduct);
     const [manualId, setManualId] = useState('');
@@ -64,7 +59,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
     const [newColor, setNewColor] = useState({ name: '', hex: '#000000' });
     const [isGeneratingDesc, setIsGeneratingDesc] = useState(false);
 
-    // FIX: Simplified functions as DataContext does not have granular updaters
     const addProduct = (newProduct: Product) => {
         const newProducts = [...products, newProduct];
         updateData('products', newProducts);
@@ -84,7 +78,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
             setManualId('');
             setIdError('');
         } else {
-            // For new products, create a fresh slate and set a default category group if available
             const defaultData = { ...emptyProduct };
             if (collections.length > 0) {
                 defaultData.categoryGroup = collections[0];
@@ -102,16 +95,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
         const name = target.name;
         const value = target.value;
         
-        if (name.includes('.')) {
-            const [outer, inner] = name.split('.');
-            setFormData(prev => ({
-                ...prev,
-                [outer]: {
-                    ...((prev as any)[outer] as object),
-                    [inner]: Number(value)
-                }
-            }));
-        } else if (target instanceof HTMLInputElement && target.type === 'checkbox') {
+        if (target instanceof HTMLInputElement && target.type === 'checkbox') {
             setFormData(prev => ({ ...prev, [name]: target.checked }));
         } else if (name === 'moq') {
             setFormData(prev => ({ ...prev, moq: value === '' ? undefined : Number(value) }));
@@ -247,14 +231,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
         };
         
         if (dataToSave.materialId === '') delete dataToSave.materialId;
-
-        if (!dataToSave.mockupImageUrl) {
-            delete dataToSave.mockupImageUrl;
-            delete dataToSave.mockupArea;
-        } else if (!dataToSave.mockupArea || (dataToSave.mockupArea.width === 0 && dataToSave.mockupArea.height === 0)) {
-            delete dataToSave.mockupArea;
-        }
-
 
         if (productToEdit && 'id' in dataToSave) {
             updateProduct(dataToSave as Product);
@@ -472,7 +448,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
                     <div className="p-3 border rounded-md">
                         <label className="block text-sm font-medium text-gray-700 mb-2">Available Sizes</label>
                         <div className="space-y-2">
-                            {/* FIX: Explicitly typing the `size` parameter as `ProductSize` helps TypeScript's type inference, resolving the error where `.map` was not found on `formData.availableSizes`. */}
                             {formData.availableSizes.map((size: ProductSize, index) => (
                                 <div key={index} className="grid grid-cols-1 sm:grid-cols-4 gap-2 items-center">
                                     <input
@@ -548,34 +523,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
                             ))}
                         </div>
                     </div>
-                    
-                     <Accordion title="Mockup Generator Settings" theme='light'>
-                        <div className="p-4 space-y-4">
-                            <div>
-                                <label htmlFor="mockupImageUrl" className="block text-sm font-medium text-gray-700">Mockup Image URL</label>
-                                <input
-                                    type="url"
-                                    name="mockupImageUrl"
-                                    id="mockupImageUrl"
-                                    value={formData.mockupImageUrl || ''}
-                                    onChange={handleInputChange}
-                                    placeholder="https://.../flat-lay-image.png"
-                                    className={darkInputStyles}
-                                />
-                                <p className="text-xs text-gray-500 mt-1">URL of the "flat-lay" product image. Must be a transparent PNG.</p>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Printable Area (%)</label>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-1">
-                                    <input type="number" name="mockupArea.top" value={formData.mockupArea?.top || 0} onChange={handleInputChange} placeholder="Top" className={darkInputStyles} />
-                                    <input type="number" name="mockupArea.left" value={formData.mockupArea?.left || 0} onChange={handleInputChange} placeholder="Left" className={darkInputStyles} />
-                                    <input type="number" name="mockupArea.width" value={formData.mockupArea?.width || 0} onChange={handleInputChange} placeholder="Width" className={darkInputStyles} />
-                                    <input type="number" name="mockupArea.height" value={formData.mockupArea?.height || 0} onChange={handleInputChange} placeholder="Height" className={darkInputStyles} />
-                                </div>
-                            </div>
-                        </div>
-                    </Accordion>
-
 
                     <div className="flex items-start">
                         <div className="flex items-center h-5">

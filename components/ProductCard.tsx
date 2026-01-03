@@ -24,6 +24,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onProductClick }) =>
     const primaryImageUrl = allImages[0] || 'https://placehold.co/600x800?text=No+Image';
     const secondaryImageUrl = allImages[1] || primaryImageUrl;
 
+    const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+        e.currentTarget.src = 'https://placehold.co/600x800/f1f5f9/94a3b8?text=Image+Unavailable';
+        e.currentTarget.onerror = null;
+    };
+
     return (
         <div 
             className="group bg-white overflow-hidden shadow-sm flex flex-col transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1 relative cursor-pointer"
@@ -36,12 +41,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onProductClick }) =>
                     <img
                         src={primaryImageUrl}
                         alt={product.name}
+                        onError={handleImageError}
                         className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-in-out group-hover:opacity-0"
                     />
                     {/* Secondary Image (on hover) */}
                     <img
                         src={secondaryImageUrl}
                         alt={`${product.name} alternate view`}
+                        onError={handleImageError}
                         className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-in-out opacity-0 group-hover:opacity-100"
                     />
                 </div>

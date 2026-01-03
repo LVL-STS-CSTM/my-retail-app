@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Product, View, HeroContent, InfoCard, BrandReview, PlatformRating } from './types';
 import { QuoteProvider } from './context/CartContext';
@@ -32,8 +30,6 @@ import InfoCards from './components/InfoCards';
 import FeaturedVideo from './components/FeaturedVideo';
 import SplashScreen from './components/SplashScreen';
 import BrandReviews from './components/BrandReviews';
-// FIX: Changed to a named import to resolve the module error.
-import { MockupGeneratorPage } from './components/MockupGeneratorPage';
 import FeaturedPartners from './components/FeaturedPartners';
 import HowItWorks from './components/HowItWorks';
 import CustomizationShowcase from './components/CustomizationShowcase';
@@ -43,6 +39,8 @@ import CommunityPage from './components/CommunityPage';
 import WhyChooseUs from './components/WhyChooseUs';
 import HowWeWorkPage from './components/HowWeWorkPage';
 import AiAdvisor from './components/AiAdvisor';
+// FIX: Added missing import for MockupGeneratorPage
+import { MockupGeneratorPage } from './components/MockupGeneratorPage';
 
 const useOnScreen = (ref: React.RefObject<HTMLElement>, rootMargin: string = '0px 0px -150px 0px'): boolean => {
     const [isIntersecting, setIntersecting] = useState(false);
@@ -107,6 +105,21 @@ const AppContent: React.FC = () => {
             setIsScrolled(window.scrollY > 20);
         };
 
+        // Admin hash listener
+        const checkHash = () => {
+            if (window.location.hash === '#admin') {
+                if (!isAuthenticated) {
+                    setIsPasswordModalOpen(true);
+                } else {
+                    setView('admin');
+                }
+            }
+        };
+
+        // Initial check
+        checkHash();
+        window.addEventListener('hashchange', checkHash);
+
         // Splash screen logic
         const splashTimer = setTimeout(() => {
             setIsAppLoading(false); // Start fading out
@@ -125,11 +138,12 @@ const AppContent: React.FC = () => {
         window.addEventListener('scroll', handleScroll);
         return () => {
             window.removeEventListener('scroll', handleScroll);
+            window.removeEventListener('hashchange', checkHash);
             clearTimeout(splashTimer);
             clearTimeout(visibilityTimer);
             clearTimeout(subscriptionTimer);
         };
-    }, []);
+    }, [isAuthenticated]);
 
     const handleNavigate = (page: View, value: string | null = null) => {
         if (page === 'catalogue' && value) {
@@ -166,6 +180,8 @@ const AppContent: React.FC = () => {
         if (success) {
             setIsPasswordModalOpen(false);
             setView('admin');
+            // Clear hash to prevent modal reappearing on refresh if desired, 
+            // but keeping it is fine as isAuthenticated is now true
         } else {
             setToastMessage("Invalid credentials.");
         }
@@ -227,14 +243,15 @@ const AppContent: React.FC = () => {
                 return <PrivacyPolicyPage />;
             case 'materials':
                 return <FabricsPage />;
-            case 'mockup-generator':
-                return <MockupGeneratorPage />;
             case 'athletes':
                 return <AthletesPage />;
             case 'community':
                 return <CommunityPage onNavigate={handleNavigate} />;
             case 'how-we-work':
                 return <HowWeWorkPage />;
+            // FIX: Added case for 'mockup-generator' to the main view routing
+            case 'mockup-generator':
+                return <MockupGeneratorPage />;
             default:
                 return <div className="text-center py-20">Page not found</div>;
         }

@@ -1,0 +1,89 @@
+
+import { GoogleGenAI, Type } from "@google/genai";
+
+interface Env {
+  CONTENT_KV: any;
+}
+
+export const onRequestPost = async (context: { env: Env; request: Request }) => {
+  const { env, request } = context;
+
+  if (!process.env.API_KEY) {
+    return new Response(JSON.stringify({ message: 'Server configuration error: Missing API Key.' }), { status: 500 });
+  }
+
+  try {
+    const body: any = await request.json();
+    const { type, payload } = body;
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+    // Admin auth check for non-advisor requests
+    if (type === 'description' || type === 'review') {
+      const authHeader = request.headers.get('Authorization');
+      const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+      
+      const storedCredsRaw = await env.CONTENT_KV.get('credential');
+      if (!storedCredsRaw) return new Response(JSON.stringify({ message: 'Unauthorized: Config missing' }), { status: 401 });
+      const storedCreds = JSON.parse(storedCredsRaw);
+      const expectedToken = `${storedCreds.username}:${storedCreds.password}`;
+      
+      if (token !== expectedToken) {
+        return new Response(JSON.stringify({ message: 'Unauthorized' }), { status: 401 });
+      }
+    }
+
+    if (type === 'description') {
+      const { productName, category } = payload;
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Generate a compelling marketing description for ${productName} in the ${category} category. 2-3 sentences. No markdown.`,
+      });
+      return new Response(JSON.stringify({ text: response.text?.trim() }), { status: 200 });
+
+    } else if (type === 'review') {
+      const { keywords } = payload;
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Generate a positive customer review based on: ${keywords}`,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              author: { type: Type.STRING },
+              quote: { type: Type.STRING },
+            },
+            required: ["author", "quote"],
+          },
+        },
+      });
+      return new Response(response.text, { status: 200 });
+
+    } else if (type === 'advisor') {
+      const { messages, products } = payload;
+      const productContext = JSON.stringify(products.map((p: any) => ({ 
+        name: p.name, 
+        desc: p.description, 
+        cat: p.category 
+      })));
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: messages.map((m: any) => ({
+          role: m.sender === 'user' ? 'user' : 'model',
+          parts: [{ text: m.text }]
+        })),
+        config: {
+          systemInstruction: `You are an expert B2B apparel advisor for LEVEL CUSTOMS. Use this catalogue: ${productContext}`
+        }
+      });
+
+      return new Response(JSON.stringify({ text: response.text?.trim() }), { status: 200 });
+    }
+
+    return new Response('Invalid Type', { status: 400 });
+
+  } catch (error: any) {
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  }
+};
