@@ -8,10 +8,7 @@ export const onRequestPost = async (context: { env: Env; request: Request }) => 
   const { env, request } = context;
 
   // REQUIREMENT: The API key must be obtained exclusively from the environment variable process.env.API_KEY.
-  // This requires the 'nodejs_compat' compatibility flag to be enabled in Cloudflare.
-  const apiKey = process.env.API_KEY;
-
-  if (!apiKey) {
+  if (!process.env.API_KEY) {
     return new Response(JSON.stringify({ 
       message: 'Server configuration error: API_KEY not found. Please ensure it is set in the Cloudflare Dashboard Secrets.' 
     }), { 
@@ -25,8 +22,7 @@ export const onRequestPost = async (context: { env: Env; request: Request }) => 
     const { type, payload } = body;
     
     // REQUIREMENT: Always use a named parameter for initialization: new GoogleGenAI({ apiKey: ... })
-    // REQUIREMENT: Create instance right before use.
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
     // Admin authentication check for management tasks
     if (type === 'description' || type === 'review') {
@@ -43,15 +39,12 @@ export const onRequestPost = async (context: { env: Env; request: Request }) => 
       }
     }
 
-    // Task Dispatching
     if (type === 'description') {
       const { productName, category } = payload;
-      // REQUIREMENT: Basic text tasks use 'gemini-3-flash-preview'
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: `Generate a professional, compelling marketing description for a ${productName} in the ${category} category. Keep it to 2-3 high-impact sentences. No markdown.`,
       });
-      // REQUIREMENT: Access .text property directly
       return new Response(JSON.stringify({ text: response.text?.trim() }), { 
         status: 200,
         headers: { 'Content-Type': 'application/json' }
@@ -88,7 +81,6 @@ export const onRequestPost = async (context: { env: Env; request: Request }) => 
         group: p.categoryGroup
       })));
 
-      // REQUIREMENT: Complex text tasks (Advisor/Consultant) use 'gemini-3-pro-preview'
       const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
         contents: messages.map((m: any) => ({

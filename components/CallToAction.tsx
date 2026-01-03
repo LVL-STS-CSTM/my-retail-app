@@ -1,31 +1,7 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { View } from '../types';
 import Button from './Button';
-
-const useOnScreen = (ref: React.RefObject<any>, rootMargin: string = '0px 0px -20% 0px'): boolean => {
-    const [isIntersecting, setIntersecting] = useState(false);
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    setIntersecting(true);
-                    observer.unobserve(entry.target);
-                }
-            },
-            { rootMargin }
-        );
-        const currentRef = ref.current;
-        if (currentRef) {
-            observer.observe(currentRef);
-        }
-        return () => {
-            if (currentRef) {
-                observer.unobserve(currentRef);
-            }
-        };
-    }, [ref, rootMargin]);
-    return isIntersecting;
-};
+import { useOnScreen } from '../useOnScreen';
 
 interface CallToActionProps {
     onNavigate: (page: View) => void;

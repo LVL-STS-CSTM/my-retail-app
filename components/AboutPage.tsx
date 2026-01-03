@@ -2,31 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { View } from '../types';
 import Button from './Button';
 import { ChatIcon, DesignIcon, ProductionIcon, LogisticsIcon, BriefcaseIcon, SparklesIcon, SustainabilityIcon, SampleTestingIcon, EyeIcon, TargetIcon } from './icons';
-
-const useOnScreen = (ref: React.RefObject<any>, rootMargin: string = '0px 0px -20% 0px'): boolean => {
-    const [isIntersecting, setIntersecting] = useState(false);
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    setIntersecting(true);
-                    observer.unobserve(entry.target);
-                }
-            },
-            { rootMargin }
-        );
-        const currentRef = ref.current;
-        if (currentRef) {
-            observer.observe(currentRef);
-        }
-        return () => {
-            if (currentRef) {
-                observer.unobserve(currentRef);
-            }
-        };
-    }, [ref, rootMargin]);
-    return isIntersecting;
-};
+import { useOnScreen } from '../useOnScreen';
 
 interface AboutPageProps {
     onNavigate: (page: View, value?: string | null) => void;
@@ -41,13 +17,10 @@ const ProcessStep: React.FC<{
     delay: number;
 }> = ({ icon, step, title, description, isVisible, delay }) => (
     <div className={`relative pl-24 transition-all duration-500 ease-out ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`} style={{ transitionDelay: `${delay}ms`}}>
-        {/* Timeline line */}
         <div className="absolute left-[38px] top-1 h-full w-0.5 bg-gray-300"></div>
-        {/* Icon container on the timeline */}
         <div className="absolute left-0 top-0 w-20 h-20 rounded-full bg-gray-100 text-[#3A3A3A] flex items-center justify-center border-4 border-[#E0E0E0] shadow-lg">
             {icon}
         </div>
-        {/* Content */}
         <div>
             <p className="font-bold text-xs text-gray-500 uppercase tracking-wider">Step {step}</p>
             <h4 className="font-oswald text-2xl text-[#3A3A3A] mt-0.5 uppercase tracking-wide">{title}</h4>
@@ -55,7 +28,6 @@ const ProcessStep: React.FC<{
         </div>
     </div>
 );
-
 
 const ValueCard: React.FC<{ icon: React.ReactNode; title: string; children: React.ReactNode; delay: number; isVisible: boolean }> = ({ icon, title, children, delay, isVisible }) => (
     <div 
@@ -81,7 +53,6 @@ const TeamMemberCard: React.FC<{ name: string; title: string; imageUrl: string; 
         <p className="text-xs text-gray-600">{bio}</p>
     </div>
 );
-
 
 const AboutPage: React.FC<AboutPageProps> = ({ onNavigate }) => {
     const sectionRefs = {
@@ -119,36 +90,29 @@ const AboutPage: React.FC<AboutPageProps> = ({ onNavigate }) => {
     return (
         <div className="bg-[#E0E0E0] text-[#3A3A3A] overflow-x-hidden">
             <section className="relative bg-gray-900 text-white py-20 md:py-32 text-center flex items-center justify-center">
-                <img 
-                    src="https://images.pexels.com/photos/8365691/pexels-photo-8365691.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2" 
-                    alt="Design studio workspace for custom apparel" 
-                    className="absolute inset-0 w-full h-full object-cover"
-                />
+                <img src="https://images.pexels.com/photos/8365691/pexels-photo-8365691.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2" alt="Design studio" className="absolute inset-0 w-full h-full object-cover"/>
                 <div className="absolute inset-0 bg-[#3A3A3A]/70"></div>
                 <div className="relative z-10 animate-fade-in-up">
                     <h1 className="font-heading text-5xl md:text-7xl tracking-tight uppercase">About Level</h1>
                     <p className="mt-4 text-lg max-w-2xl mx-auto text-gray-200">Crafting Quality. Championing Local.</p>
                 </div>
             </section>
-
             <section ref={sectionRefs.about} className={`py-16 md:py-24 px-4 bg-white`}>
                 <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                     <div className={`transition-all duration-700 ease-out ${visibility.about ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'}`}>
                         <h2 className="font-heading text-3xl md:text-4xl text-gray-900 mb-6 uppercase">Our Story</h2>
                         <div className="space-y-4 text-gray-700 leading-relaxed">
                             <p>Level is a proudly Filipino brand that creates custom clothing — crafted for teams, businesses, and everyday people who believe quality shouldn’t come with an outrageous price tag.</p>
-                            <p>From game-day jerseys to work polos and daily tees, every piece is designed, printed, and sewn by skilled local hands that take pride in every detail. No shortcuts. No overpriced fluff. Just honest, hardwearing apparel that feels right, fits well, and looks even better.</p>
                             <p>We carry the spirit of Filipino craftsmanship in every stitch as we believe locals can lead, and we’re here to prove it.</p>
                         </div>
                     </div>
                     <div className={`transition-all duration-700 ease-out delay-200 ${visibility.about ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10'}`}>
                         <div className="aspect-w-1 aspect-h-1">
-                            <img src="https://images.pexels.com/photos/5699865/pexels-photo-5699865.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2" alt="Close up of high-quality fabric" className="w-full h-full object-cover rounded-lg shadow-xl"/>
+                            <img src="https://images.pexels.com/photos/5699865/pexels-photo-5699865.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2" alt="High-quality fabric" className="w-full h-full object-cover rounded-lg shadow-xl"/>
                         </div>
                     </div>
                 </div>
             </section>
-
             <section ref={sectionRefs.missionVision} className={`py-16 md:py-24 px-4 bg-gray-200`}>
                  <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className={`bg-white p-8 rounded-lg shadow-lg flex flex-col transition-all duration-700 ease-out ${visibility.missionVision ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'}`}>
@@ -156,74 +120,44 @@ const AboutPage: React.FC<AboutPageProps> = ({ onNavigate }) => {
                             <TargetIcon className="w-10 h-10 text-gray-800 flex-shrink-0"/>
                             <h2 className="font-heading text-3xl text-gray-900 uppercase">Our Mission</h2>
                         </div>
-                        <p className="text-gray-700 leading-relaxed">To empower Filipinos by making high-quality, custom apparel accessible—because looking good, feeling proud, and representing who you are shouldn’t come at a high cost. At LEVEL, we believe excellence doesn’t have to be expensive. Through honest pricing, skilled local craftsmanship, and thoughtful design, we make clothing every Filipino can wear with pride.</p>
+                        <p className="text-gray-700 leading-relaxed">To empower Filipinos by making high-quality, custom apparel accessible through honest pricing and skilled local craftsmanship.</p>
                     </div>
                      <div className={`bg-white p-8 rounded-lg shadow-lg flex flex-col transition-all duration-700 ease-out delay-200 ${visibility.missionVision ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10'}`}>
                         <div className="flex items-center gap-4 mb-4">
                             <EyeIcon className="w-10 h-10 text-gray-800 flex-shrink-0"/>
                             <h2 className="font-heading text-3xl text-gray-900 uppercase">Our Vision</h2>
                         </div>
-                        <p className="text-gray-700 leading-relaxed">To become the most trusted Filipino-made custom apparel brand—where quality, affordability, and national pride meet. We envision a future where every team, big or small, can wear premium uniforms that reflect their spirit, without breaking the bank. By championing local artisans and ethical pricing, we aim to redefine the game through every piece we create and every Filipino we proudly represent.</p>
+                        <p className="text-gray-700 leading-relaxed">To become the most trusted Filipino-made custom apparel brand—where quality, affordability, and national pride meet.</p>
                     </div>
                 </div>
             </section>
-
             <section ref={sectionRefs.values} className="py-16 md:py-24 px-4 bg-[#3A3A3A]">
-                 <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-12">
-                        <h2 className="font-heading text-3xl md:text-4xl text-white mb-4 uppercase">Our Core Values</h2>
-                        <p className="text-lg text-gray-300 max-w-2xl mx-auto">The principles that guide every decision we make.</p>
-                    </div>
+                 <div className="max-w-7xl mx-auto text-center">
+                    <h2 className="font-heading text-3xl md:text-4xl text-white mb-12 uppercase">Our Core Values</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                        <ValueCard icon={<SampleTestingIcon className="w-6 h-6"/>} title="Unmatched Craftsmanship" delay={0} isVisible={visibility.values}>We obsess over every detail, from fabric selection to the final stitch, ensuring a premium product every time.</ValueCard>
-                        <ValueCard icon={<BriefcaseIcon className="w-6 h-6"/>} title="Client-First Partnership" delay={150} isVisible={visibility.values}>Your vision is our mission. We work collaboratively with you to ensure your goals are met and expectations are exceeded.</ValueCard>
-                        <ValueCard icon={<SustainabilityIcon className="w-6 h-6"/>} title="Integrity & Honesty" delay={300} isVisible={visibility.values}>We believe in transparent pricing and ethical practices, building relationships founded on trust and respect.</ValueCard>
-                        <ValueCard icon={<SparklesIcon className="w-6 h-6"/>} title="Continuous Innovation" delay={450} isVisible={visibility.values}>We constantly explore new materials, techniques, and designs to stay at the forefront of the industry.</ValueCard>
+                        <ValueCard icon={<SampleTestingIcon className="w-6 h-6"/>} title="Craftsmanship" delay={0} isVisible={visibility.values}>We obsess over every detail.</ValueCard>
+                        <ValueCard icon={<BriefcaseIcon className="w-6 h-6"/>} title="Partnership" delay={150} isVisible={visibility.values}>Your vision is our mission.</ValueCard>
+                        <ValueCard icon={<SustainabilityIcon className="w-6 h-6"/>} title="Integrity" delay={300} isVisible={visibility.values}>Transparent pricing and ethical practices.</ValueCard>
+                        <ValueCard icon={<SparklesIcon className="w-6 h-6"/>} title="Innovation" delay={450} isVisible={visibility.values}>Staying at the forefront of the industry.</ValueCard>
                     </div>
                 </div>
             </section>
-
-            <section ref={sectionRefs.team} className={`py-16 md:py-24 px-4 bg-white`}>
-                <div className="max-w-5xl mx-auto">
-                    <div className="text-center mb-12">
-                        <h2 className="font-heading text-3xl text-gray-900 mb-4 uppercase">Meet the Leadership</h2>
-                        <p className="text-lg text-gray-700 max-w-2xl mx-auto">The driving force behind our commitment to quality and innovation.</p>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {teamMembers.map((member, index) => (
-                            <TeamMemberCard key={member.name} {...member} isVisible={visibility.team} delay={index * 150} />
-                        ))}
-                    </div>
-                </div>
-            </section>
-            
             <div ref={sectionRefs.process} className={`py-16 px-4 bg-[#E0E0E0]`}>
                 <div className="max-w-3xl mx-auto">
                     <div className="text-center mb-16">
                         <h2 className="font-heading text-3xl md:text-4xl text-[#3A3A3A] mb-4 uppercase">Our 5-Step Process</h2>
-                        <p className="text-lg text-gray-600">A streamlined journey from concept to delivery, ensuring clarity and quality at every stage.</p>
                     </div>
                     <div className="space-y-16">
                         {processSteps.map((step, index) => (
-                             <ProcessStep
-                                key={step.step}
-                                {...step}
-                                isVisible={visibility.process}
-                                delay={index * 200}
-                            />
+                             <ProcessStep key={step.step} {...step} isVisible={visibility.process} delay={index * 200} />
                         ))}
                     </div>
                 </div>
             </div>
-
             <section ref={sectionRefs.cta} className={`py-16 md:py-24 px-4 bg-white transition-all duration-700 ease-out ${visibility.cta ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
                 <div className="max-w-5xl mx-auto text-center">
                     <h2 className="font-heading text-3xl text-[#3A3A3A] mb-4 uppercase">Ready to Level Up Your Brand?</h2>
-                    <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">Explore our full range of customizable products and let's start creating something exceptional together.</p>
-                    <Button 
-                        variant="solid"
-                        onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.preventDefault(); onNavigate('catalogue'); }}
-                    >
+                    <Button variant="solid" onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.preventDefault(); onNavigate('catalogue'); }}>
                         View Full Catalogue
                     </Button>
                 </div>
