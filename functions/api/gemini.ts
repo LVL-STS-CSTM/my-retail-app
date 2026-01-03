@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 
 interface Env {
@@ -8,12 +7,13 @@ interface Env {
 export const onRequestPost = async (context: { env: Env; request: Request }) => {
   const { env, request } = context;
 
-  // Guideline: API key must be obtained exclusively from process.env.API_KEY.
-  // Note: This requires the 'nodejs_compat' flag to be enabled in Cloudflare Settings.
+  // RULE: The API key must be obtained exclusively from process.env.API_KEY.
   const apiKey = process.env.API_KEY;
 
   if (!apiKey) {
-    return new Response(JSON.stringify({ message: 'Server configuration error: Missing API_KEY in Environment Variables.' }), { 
+    return new Response(JSON.stringify({ 
+      message: 'Server configuration error: API_KEY not found. Please set it in Cloudflare Dashboard Variables.' 
+    }), { 
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
@@ -23,8 +23,8 @@ export const onRequestPost = async (context: { env: Env; request: Request }) => 
     const body: any = await request.json();
     const { type, payload } = body;
     
-    // Guideline: Always use a named parameter for apiKey initialization.
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // RULE: Always use a named parameter for initialization: new GoogleGenAI({ apiKey: ... })
+    const ai = new GoogleGenAI({ apiKey });
 
     // Admin auth check for description and review generation
     if (type === 'description' || type === 'review') {
@@ -32,7 +32,7 @@ export const onRequestPost = async (context: { env: Env; request: Request }) => 
       const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
       
       const storedCredsRaw = await env.CONTENT_KV.get('credential');
-      if (!storedCredsRaw) return new Response(JSON.stringify({ message: 'Unauthorized: Config missing' }), { status: 401 });
+      if (!storedCredsRaw) return new Response(JSON.stringify({ message: 'Unauthorized: Admin config missing' }), { status: 401 });
       const storedCreds = JSON.parse(storedCredsRaw);
       const expectedToken = `${storedCreds.username}:${storedCreds.password}`;
       
@@ -41,14 +41,15 @@ export const onRequestPost = async (context: { env: Env; request: Request }) => 
       }
     }
 
+    // Task Selection
     if (type === 'description') {
       const { productName, category } = payload;
-      // Guideline: Use 'gemini-3-flash-preview' for basic text tasks.
+      // RULE: Basic text tasks use 'gemini-3-flash-preview'
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: `Generate a compelling marketing description for ${productName} in the ${category} category. Keep it to 2-3 sentences. No markdown formatting.`,
       });
-      // Guideline: Access .text property directly (not a method).
+      // RULE: Access response.text directly (not a method)
       return new Response(JSON.stringify({ text: response.text?.trim() }), { 
         status: 200,
         headers: { 'Content-Type': 'application/json' }
