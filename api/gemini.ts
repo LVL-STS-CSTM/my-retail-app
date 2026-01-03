@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 
 // This is a Vercel Serverless Function
@@ -27,7 +28,7 @@ export default async function handler(req: Request): Promise<Response> {
         return new Response('Method Not Allowed', { status: 405 });
     }
     
-    // Get API Key from environment
+    // FIX: Guideline states to use process.env.API_KEY directly in initialization.
     const apiKey = process.env.API_KEY;
     if (!apiKey) {
         console.error("API_KEY is not set in environment variables.");
@@ -35,7 +36,8 @@ export default async function handler(req: Request): Promise<Response> {
     }
 
     try {
-        const ai = new GoogleGenAI({ apiKey });
+        // FIX: Always use a named parameter for initialization and obtain key exclusively from process.env.API_KEY.
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const body = await req.json();
         const { type, payload } = body;
 
@@ -56,12 +58,14 @@ export default async function handler(req: Request): Promise<Response> {
             Category: ${category}
             The description should be about 2-3 sentences long, highlighting its key features and benefits in an engaging tone. Do not use markdown or special formatting.`;
 
+            // FIX: Use gemini-3-flash-preview for basic text tasks.
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
+                model: 'gemini-3-flash-preview',
                 contents: prompt,
             });
 
-            return new Response(JSON.stringify({ text: response.text.trim() }), { 
+            // FIX: Directly access response.text property.
+            return new Response(JSON.stringify({ text: response.text?.trim() }), { 
                 status: 200,
                 headers: { 'Content-Type': 'application/json' }
             });
@@ -75,8 +79,9 @@ export default async function handler(req: Request): Promise<Response> {
             The review should be positive and sound authentic. Include a plausible-sounding author name (e.g., a person's name or a company name).
             Format the output as JSON.`;
 
+            // FIX: Use gemini-3-flash-preview for text tasks and access .text directly.
             const response = await ai.models.generateContent({
-                model: "gemini-2.5-flash",
+                model: "gemini-3-flash-preview",
                 contents: prompt,
                 config: {
                     responseMimeType: "application/json",
@@ -126,8 +131,9 @@ export default async function handler(req: Request): Promise<Response> {
 
             const prompt = `Based on this, provide a helpful and relevant response to the last user message.`;
             
+            // FIX: Use gemini-3-flash-preview for text tasks and access .text directly.
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
+                model: 'gemini-3-flash-preview',
                 contents: [
                     { role: 'user', parts: [{ text: conversationHistory }, { text: prompt }] }
                 ],
@@ -139,7 +145,7 @@ export default async function handler(req: Request): Promise<Response> {
                 }
             });
 
-            return new Response(JSON.stringify({ text: response.text.trim() }), { 
+            return new Response(JSON.stringify({ text: response.text?.trim() }), { 
                 status: 200,
                 headers: { 'Content-Type': 'application/json' }
             });

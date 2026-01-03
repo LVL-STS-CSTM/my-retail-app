@@ -1,17 +1,15 @@
 
 {
-  "name": "level-custom-apparel",
+  "name": "level-custom",
   "pages_build_output_dir": "dist",
   "compatibility_date": "2025-01-01",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "kv_namespaces": [
     {
       "binding": "CONTENT_KV",
-      "id": "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+      "id": "REPLACE_WITH_YOUR_ACTUAL_KV_ID"
     }
-  ],
-  "vars": {
-    "ADMIN_USERNAME": "admin",
-    "GOOGLE_SERVICE_ACCOUNT_EMAIL": "REPLACE_WITH_YOUR_SERVICE_ACCOUNT_EMAIL",
-    "GOOGLE_SHEET_ID": "REPLACE_WITH_YOUR_SHEET_ID"
-  }
+  ]
 }
