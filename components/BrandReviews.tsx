@@ -3,7 +3,7 @@ import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react'
 import { BrandReview, PlatformRating } from '../types';
 import { StarIcon, QuoteIcon, GoogleGIcon, FacebookIcon, YelpIcon, TrustpilotIcon, LinkedinIcon } from './icons';
 
-const useOnScreen = (ref: React.RefObject<HTMLElement>, rootMargin: string = '0px 0px -150px 0px'): boolean => {
+const useOnScreen = (ref: React.RefObject<Element | null>, rootMargin: string = '0px 0px -150px 0px'): boolean => {
     const [isIntersecting, setIntersecting] = useState(false);
     useEffect(() => {
         const observer = new IntersectionObserver(

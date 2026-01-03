@@ -1,7 +1,8 @@
+
 import React, { useRef, useState, useEffect } from 'react';
 import { ChatIcon, DesignIcon, ProductionIcon, LogisticsIcon } from './icons';
 
-const useOnScreen = (ref: React.RefObject<HTMLElement>, rootMargin: string = '0px 0px -20% 0px'): boolean => {
+const useOnScreen = (ref: React.RefObject<Element | null>, rootMargin: string = '0px 0px -20% 0px'): boolean => {
     const [isIntersecting, setIntersecting] = useState(false);
     useEffect(() => {
         const observer = new IntersectionObserver(

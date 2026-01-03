@@ -39,10 +39,9 @@ import CommunityPage from './components/CommunityPage';
 import WhyChooseUs from './components/WhyChooseUs';
 import HowWeWorkPage from './components/HowWeWorkPage';
 import AiAdvisor from './components/AiAdvisor';
-// FIX: Added missing import for MockupGeneratorPage
 import { MockupGeneratorPage } from './components/MockupGeneratorPage';
 
-const useOnScreen = (ref: React.RefObject<HTMLElement>, rootMargin: string = '0px 0px -150px 0px'): boolean => {
+const useOnScreen = (ref: React.RefObject<Element | null>, rootMargin: string = '0px 0px -150px 0px'): boolean => {
     const [isIntersecting, setIntersecting] = useState(false);
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -180,8 +179,6 @@ const AppContent: React.FC = () => {
         if (success) {
             setIsPasswordModalOpen(false);
             setView('admin');
-            // Clear hash to prevent modal reappearing on refresh if desired, 
-            // but keeping it is fine as isAuthenticated is now true
         } else {
             setToastMessage("Invalid credentials.");
         }
@@ -201,7 +198,6 @@ const AppContent: React.FC = () => {
     const renderView = () => {
         if (view === 'admin' && !isAuthenticated) {
             setIsPasswordModalOpen(true);
-            // Show homepage content while password modal is open
             return renderHomePage();
         }
 
@@ -249,7 +245,6 @@ const AppContent: React.FC = () => {
                 return <CommunityPage onNavigate={handleNavigate} />;
             case 'how-we-work':
                 return <HowWeWorkPage />;
-            // FIX: Added case for 'mockup-generator' to the main view routing
             case 'mockup-generator':
                 return <MockupGeneratorPage />;
             default:

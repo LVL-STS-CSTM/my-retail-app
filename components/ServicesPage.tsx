@@ -1,9 +1,10 @@
+
 import React, { useRef, useState, useEffect } from 'react';
 import { View } from '../types';
 import Button from './Button';
 import { BriefcaseIcon, DesignIcon, PackagingIcon, PrintingIcon, ChatIcon, ProductionIcon, LogisticsIcon } from './icons';
 
-const useOnScreen = (ref: React.RefObject<HTMLElement>, rootMargin: string = '0px 0px -150px 0px'): boolean => {
+const useOnScreen = (ref: React.RefObject<Element | null>, rootMargin: string = '0px 0px -150px 0px'): boolean => {
     const [isIntersecting, setIntersecting] = useState(false);
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -200,7 +201,7 @@ const ServicesPage: React.FC<ServicePageProps> = ({ onNavigate }) => {
                     </p>
                     <Button 
                         variant="primary"
-                        onClick={(e) => { e.preventDefault(); onNavigate('contact'); }}
+                        onClick={(e: React.MouseEvent) => { e.preventDefault(); onNavigate('contact'); }}
                         className="bg-white/90 text-black hover:bg-white"
                     >
                         Start Your Project

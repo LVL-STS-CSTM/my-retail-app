@@ -1,8 +1,9 @@
+
 import React, { useRef, useState, useEffect } from 'react';
 import { View } from '../types';
 import Button from './Button';
 
-const useOnScreen = (ref: React.RefObject<HTMLElement>, rootMargin: string = '0px 0px -20% 0px'): boolean => {
+const useOnScreen = (ref: React.RefObject<Element | null>, rootMargin: string = '0px 0px -20% 0px'): boolean => {
     const [isIntersecting, setIntersecting] = useState(false);
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -45,7 +46,7 @@ const CallToAction: React.FC<CallToActionProps> = ({ onNavigate }) => {
                 <div className={`transition-all duration-700 ease-out delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                     <Button 
                         variant="solid"
-                        onClick={(e) => { e.preventDefault(); onNavigate('contact'); }}
+                        onClick={(e: React.MouseEvent) => { e.preventDefault(); onNavigate('contact'); }}
                     >
                         Start Your Project
                     </Button>
