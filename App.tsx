@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Product, View, HeroContent, InfoCard, BrandReview, PlatformRating } from './types';
 import { QuoteProvider } from './context/CartContext';
@@ -41,7 +40,7 @@ import HowWeWorkPage from './components/HowWeWorkPage';
 import AiAdvisor from './components/AiAdvisor';
 import { MockupGeneratorPage } from './components/MockupGeneratorPage';
 
-const useOnScreen = (ref: React.RefObject<Element | null>, rootMargin: string = '0px 0px -150px 0px'): boolean => {
+const useOnScreen = (ref: React.RefObject<any>, rootMargin: string = '0px 0px -150px 0px'): boolean => {
     const [isIntersecting, setIntersecting] = useState(false);
     useEffect(() => {
         const observer = new IntersectionObserver(

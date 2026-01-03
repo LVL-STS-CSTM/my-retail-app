@@ -1,9 +1,8 @@
-
 import React, { useRef, useState, useEffect } from 'react';
 import { Product } from '../types';
 import ProductCard from './ProductCard';
 
-const useOnScreen = (ref: React.RefObject<Element | null>, rootMargin: string = '0px 0px -150px 0px'): boolean => {
+const useOnScreen = (ref: React.RefObject<any>, rootMargin: string = '0px 0px -150px 0px'): boolean => {
     const [isIntersecting, setIntersecting] = useState(false);
     useEffect(() => {
         const observer = new IntersectionObserver(

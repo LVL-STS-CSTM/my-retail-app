@@ -1,10 +1,9 @@
-
 import React, { useRef, useState, useEffect } from 'react';
 import { View } from '../types';
 import Button from './Button';
 import { ChatIcon, DesignIcon, ProductionIcon, LogisticsIcon, BriefcaseIcon, SparklesIcon, SustainabilityIcon, SampleTestingIcon, EyeIcon, TargetIcon } from './icons';
 
-const useOnScreen = (ref: React.RefObject<Element | null>, rootMargin: string = '0px 0px -20% 0px'): boolean => {
+const useOnScreen = (ref: React.RefObject<any>, rootMargin: string = '0px 0px -20% 0px'): boolean => {
     const [isIntersecting, setIntersecting] = useState(false);
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -223,7 +222,7 @@ const AboutPage: React.FC<AboutPageProps> = ({ onNavigate }) => {
                     <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">Explore our full range of customizable products and let's start creating something exceptional together.</p>
                     <Button 
                         variant="solid"
-                        onClick={(e: React.MouseEvent) => { e.preventDefault(); onNavigate('catalogue'); }}
+                        onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.preventDefault(); onNavigate('catalogue'); }}
                     >
                         View Full Catalogue
                     </Button>

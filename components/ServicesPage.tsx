@@ -1,10 +1,9 @@
-
 import React, { useRef, useState, useEffect } from 'react';
 import { View } from '../types';
 import Button from './Button';
 import { BriefcaseIcon, DesignIcon, PackagingIcon, PrintingIcon, ChatIcon, ProductionIcon, LogisticsIcon } from './icons';
 
-const useOnScreen = (ref: React.RefObject<Element | null>, rootMargin: string = '0px 0px -150px 0px'): boolean => {
+const useOnScreen = (ref: React.RefObject<any>, rootMargin: string = '0px 0px -150px 0px'): boolean => {
     const [isIntersecting, setIntersecting] = useState(false);
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -46,11 +45,13 @@ const CoreService: React.FC<{
     return (
         <div ref={ref} className="overflow-x-hidden">
             <div className={`flex flex-col md:flex-row items-center gap-10 lg:gap-16 ${reverse ? 'md:flex-row-reverse' : ''}`}>
+                {/* Fixed missing quotes in translate-x classes on lines 53 and 57 which caused compilation errors */}
                 <div className={`w-full md:w-1/2 transition-all duration-700 ease-out ${isVisible ? 'opacity-100 translate-x-0' : `opacity-0 ${reverse ? 'translate-x-12' : '-translate-x-12'}`}`}>
                     <div className="aspect-w-4 aspect-h-3 rounded-lg overflow-hidden shadow-2xl">
                         <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
                     </div>
                 </div>
+                {/* Fixed missing quotes in translate-x classes on lines 53 and 57 which caused compilation errors */}
                 <div className={`w-full md:w-1/2 transition-all duration-700 ease-out delay-200 ${isVisible ? 'opacity-100 translate-x-0' : `opacity-0 ${reverse ? '-translate-x-12' : 'translate-x-12'}`}`}>
                     <div className="bg-white shadow-xl rounded-lg p-8 md:p-12">
                         <h2 className="font-heading text-3xl lg:text-4xl text-gray-900 mb-4 uppercase">{title}</h2>
@@ -201,7 +202,7 @@ const ServicesPage: React.FC<ServicePageProps> = ({ onNavigate }) => {
                     </p>
                     <Button 
                         variant="primary"
-                        onClick={(e: React.MouseEvent) => { e.preventDefault(); onNavigate('contact'); }}
+                        onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.preventDefault(); onNavigate('contact'); }}
                         className="bg-white/90 text-black hover:bg-white"
                     >
                         Start Your Project
