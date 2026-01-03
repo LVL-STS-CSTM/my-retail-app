@@ -7,10 +7,14 @@ interface Env {
 export const onRequestPost = async (context: { env: Env; request: Request }) => {
   const { env, request } = context;
 
-  // REQUIREMENT: API key must be obtained exclusively from process.env.API_KEY.
-  // Note: This requires the 'nodejs_compat' flag to be enabled in Cloudflare Settings.
-  if (!process.env.API_KEY) {
-    return new Response(JSON.stringify({ message: 'Server configuration error: Missing API_KEY in Environment Variables.' }), { 
+  // REQUIREMENT: The API key must be obtained exclusively from the environment variable process.env.API_KEY.
+  // This requires the 'nodejs_compat' compatibility flag to be enabled in Cloudflare.
+  const apiKey = process.env.API_KEY;
+
+  if (!apiKey) {
+    return new Response(JSON.stringify({ 
+      message: 'Server configuration error: API_KEY not found. Please ensure it is set in the Cloudflare Dashboard Secrets.' 
+    }), { 
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
@@ -20,17 +24,17 @@ export const onRequestPost = async (context: { env: Env; request: Request }) => 
     const body: any = await request.json();
     const { type, payload } = body;
     
-    // REQUIREMENT: Always use a named parameter for apiKey initialization.
-    // REQUIREMENT: Create a new instance right before making the call.
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // REQUIREMENT: Always use a named parameter for initialization: new GoogleGenAI({ apiKey: ... })
+    // REQUIREMENT: Create instance right before use.
+    const ai = new GoogleGenAI({ apiKey });
 
-    // Admin auth check for description and review generation
+    // Admin authentication check for management tasks
     if (type === 'description' || type === 'review') {
       const authHeader = request.headers.get('Authorization');
       const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
       
       const storedCredsRaw = await env.CONTENT_KV.get('credential');
-      if (!storedCredsRaw) return new Response(JSON.stringify({ message: 'Unauthorized: Admin config missing' }), { status: 401 });
+      if (!storedCredsRaw) return new Response(JSON.stringify({ message: 'Unauthorized: No admin config' }), { status: 401 });
       const storedCreds = JSON.parse(storedCredsRaw);
       const expectedToken = `${storedCreds.username}:${storedCreds.password}`;
       
@@ -39,14 +43,15 @@ export const onRequestPost = async (context: { env: Env; request: Request }) => 
       }
     }
 
+    // Task Dispatching
     if (type === 'description') {
       const { productName, category } = payload;
       // REQUIREMENT: Basic text tasks use 'gemini-3-flash-preview'
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Generate a compelling marketing description for ${productName} in the ${category} category. Keep it to 2-3 sentences. No markdown formatting.`,
+        contents: `Generate a professional, compelling marketing description for a ${productName} in the ${category} category. Keep it to 2-3 high-impact sentences. No markdown.`,
       });
-      // REQUIREMENT: Access .text property directly (not a method).
+      // REQUIREMENT: Access .text property directly
       return new Response(JSON.stringify({ text: response.text?.trim() }), { 
         status: 200,
         headers: { 'Content-Type': 'application/json' }
@@ -56,7 +61,7 @@ export const onRequestPost = async (context: { env: Env; request: Request }) => 
       const { keywords } = payload;
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Generate a positive customer review based on these keywords: ${keywords}`,
+        contents: `Generate a realistic, positive B2B customer review for apparel based on these keywords: ${keywords}`,
         config: {
           responseMimeType: "application/json",
           responseSchema: {
@@ -79,10 +84,11 @@ export const onRequestPost = async (context: { env: Env; request: Request }) => 
       const productContext = JSON.stringify(products.map((p: any) => ({ 
         name: p.name, 
         desc: p.description, 
-        cat: p.category 
+        cat: p.category,
+        group: p.categoryGroup
       })));
 
-      // REQUIREMENT: Complex text tasks (like product recommendation) use 'gemini-3-pro-preview'
+      // REQUIREMENT: Complex text tasks (Advisor/Consultant) use 'gemini-3-pro-preview'
       const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
         contents: messages.map((m: any) => ({
@@ -90,7 +96,7 @@ export const onRequestPost = async (context: { env: Env; request: Request }) => 
           parts: [{ text: m.text }]
         })),
         config: {
-          systemInstruction: `You are an expert B2B apparel advisor for LEVEL CUSTOMS. Your tone is professional and concise. Help customers select products based on their needs using this catalogue context: ${productContext}`
+          systemInstruction: `You are the LEVEL CUSTOMS AI Advisor. Your tone is professional, helpful, and high-end B2B. Use this product context to make recommendations: ${productContext}. Focus on quality, local craftsmanship, and bulk solutions.`
         }
       });
 
@@ -100,10 +106,10 @@ export const onRequestPost = async (context: { env: Env; request: Request }) => 
       });
     }
 
-    return new Response('Invalid Request Type', { status: 400 });
+    return new Response('Method Not Allowed', { status: 405 });
 
   } catch (error: any) {
-    console.error("Gemini Function Error:", error);
+    console.error("Gemini API Error:", error);
     return new Response(JSON.stringify({ error: error.message }), { 
       status: 500,
       headers: { 'Content-Type': 'application/json' }
