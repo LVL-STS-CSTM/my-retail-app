@@ -1,0 +1,14 @@
+{
+  "name": "level-custom",
+  "pages_build_output_dir": "dist",
+  "compatibility_date": "2025-01-01",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "CONTENT_KV",
+      "id": "REPLACE_WITH_YOUR_ACTUAL_KV_ID"
+    }
+  ]
+}
