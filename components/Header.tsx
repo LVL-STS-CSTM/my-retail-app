@@ -6,7 +6,6 @@ import { View } from '../types';
 import Accordion from './Accordion';
 import { useData } from '../context/DataContext';
 
-// A reusable icon button component for the header.
 const IconButton: React.FC<{
     onClick?: React.MouseEventHandler<HTMLButtonElement>;
     children: React.ReactNode;
@@ -15,8 +14,8 @@ const IconButton: React.FC<{
     theme?: 'light' | 'dark'
 }> = ({ onClick, children, ariaLabel, className = '', theme = 'light' }) => {
     const themeClasses = theme === 'dark'
-        ? 'text-gray-200 hover:text-white' // For dark backgrounds
-        : 'text-gray-600 hover:text-gray-900'; // For light backgrounds
+        ? 'text-gray-200 hover:text-white'
+        : 'text-gray-600 hover:text-gray-900';
 
     return (
         <button onClick={onClick} className={`${themeClasses} transition-colors duration-200 relative ${className}`} aria-label={ariaLabel}>
@@ -25,10 +24,6 @@ const IconButton: React.FC<{
     );
 };
 
-/**
- * @interface HeaderProps
- * @description Props for the Header component.
- */
 interface HeaderProps {
     onNavigate: (page: View, category?: string | null) => void;
     onQuoteClick: () => void;
@@ -39,29 +34,22 @@ interface HeaderProps {
     isScrolled: boolean;
 }
 
-/**
- * @description A sophisticated, redesigned header component with a centered logo, mega menu, and a responsive mobile menu.
- */
 const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick, onSubscribeClick, view, catalogueFilter, isScrolled }) => {
-    // State to manage the visibility of the mobile menu.
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    // State to manage the visibility of the desktop mega menu.
     const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
-    // State for the new "Explore" dropdown.
     const [isExploreMenuOpen, setIsExploreMenuOpen] = useState(false);
 
     const { quoteItems } = useQuote();
     const { products, collections } = useData();
 
-    // Calculate the number of unique item types in the quote list.
     const quoteItemCount = quoteItems.length;
 
-    // Conditionally set header classes based on view and scroll position.
     const isTransparent = view === 'home' && !isScrolled;
-    const headerClasses = isTransparent ? 'bg-transparent' : 'bg-[#3A3A3A] shadow-lg';
+    const headerClasses = isTransparent
+        ? 'bg-transparent text-white'
+        : 'bg-gray-800 bg-opacity-90 backdrop-blur-lg shadow-lg text-white';
 
 
-    // useMemo to build the category structure for the mega menu.
     const productCategories = useMemo(() => {
         return collections.map(groupName => {
             const categoriesSet = new Set<string>();
@@ -77,7 +65,6 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
         }).sort((a,b) => a.groupName.localeCompare(b.groupName));
     }, [products, collections]);
     
-    // Data for the "Explore" dropdown menu, now supporting external links.
     const exploreLinks = useMemo(() => [
         { label: 'About Level', view: 'about' as View },
         { label: 'Contact', view: 'contact' as View },
@@ -115,23 +102,21 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
     return (
         <>
             <header className={`fixed top-0 left-0 right-0 z-30 transition-all duration-300 ${headerClasses}`}>
-                {/* Main Header with Logo, Nav, and Icons */}
                 <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8" onMouseLeave={() => { setIsMegaMenuOpen(false); setIsExploreMenuOpen(false); }}>
                     <div className="relative flex items-center justify-between h-14">
-                        {/* Left Navigation */}
                         <div className="flex-1 flex justify-start items-center">
                             <nav className="hidden md:flex md:space-x-8">
                                 <div onMouseEnter={() => { setIsMegaMenuOpen(true); setIsExploreMenuOpen(false); }}>
                                     <button
                                         onClick={(e) => handleNavClick(e, 'catalogue', null)}
-                                        className={`flex items-center space-x-1 text-sm font-medium uppercase tracking-wider transition-colors duration-200 ${view === 'catalogue' && !catalogueFilter ? 'text-white' : 'text-gray-200 hover:text-white'}`}
+                                        className={`flex items-center space-x-1 text-sm font-medium uppercase tracking-wider transition-colors duration-200 ${view === 'catalogue' && !catalogueFilter ? 'text-white' : 'text-gray-300 hover:text-white'}`}
                                     >
                                         <span>All Products</span>
                                         <ChevronDownIcon className={`w-4 h-4 transition-transform ${isMegaMenuOpen ? 'rotate-180' : ''}`} />
                                     </button>
                                 </div>
                                 <div className="relative" onMouseEnter={() => { setIsExploreMenuOpen(true); setIsMegaMenuOpen(false); }}>
-                                    <button className="flex items-center space-x-1 text-sm font-medium uppercase tracking-wider text-gray-200 hover:text-white transition-colors duration-200">
+                                    <button className="flex items-center space-x-1 text-sm font-medium uppercase tracking-wider text-gray-300 hover:text-white transition-colors duration-200">
                                         <span>Explore</span>
                                         <ChevronDownIcon className={`w-4 h-4 transition-transform ${isExploreMenuOpen ? 'rotate-180' : ''}`} />
                                     </button>
@@ -179,7 +164,6 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                                     </div>
                                 </div>
                             </nav>
-                             {/* Mobile Menu Button (placed left for layout balance) */}
                             <div className="md:hidden">
                                 <IconButton onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} ariaLabel={isMobileMenuOpen ? 'Close menu' : 'Open menu'} theme="dark">
                                     <MenuIcon className="w-7 h-7" />
@@ -187,7 +171,6 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                             </div>
                         </div>
 
-                        {/* Centered Logo */}
                         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
                              <button onClick={(e) => handleNavClick(e, 'home')} className="flex items-center gap-x-3" aria-label="Go to homepage">
                                 <img src="https://i.imgur.com/9FhbGuI.png" alt="LEVEL logo" className="h-6 md:h-8 w-auto" />
@@ -195,7 +178,6 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                             </button>
                         </div>
 
-                        {/* Right Icons */}
                         <div className="flex-1 flex items-center justify-end">
                             <div className="flex items-center justify-end space-x-4">
                                 <div className="hidden sm:flex items-center space-x-4">
@@ -218,7 +200,6 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                         </div>
                     </div>
 
-                    {/* Mega Menu (Desktop) */}
                     <div
                         className={`absolute top-full left-0 right-0 bg-white shadow-lg border-t border-gray-100 transition-all duration-300 ease-in-out ${isMegaMenuOpen ? 'opacity-100 visible animate-fade-in-up [animation-duration:200ms]' : 'opacity-0 invisible'}`}
                         onMouseLeave={() => setIsMegaMenuOpen(false)}
@@ -259,15 +240,12 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                 </div>
             </header>
 
-            {/* Mobile Menu (Slide-in) */}
             <div className={`fixed inset-0 z-40 md:hidden ${isMobileMenuOpen ? '' : 'pointer-events-none'}`}>
-                {/* Overlay */}
                 <div
                     className={`fixed inset-0 bg-black/50 transition-opacity ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0'}`}
                     onClick={() => setIsMobileMenuOpen(false)}
                 ></div>
 
-                {/* Menu Content */}
                 <div className={`fixed top-0 left-0 h-full w-full max-w-sm bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? '-translate-x-0' : '-translate-x-full'}`}>
                     <div className="flex flex-col h-full">
                         <header className="flex items-center justify-between p-4 border-b border-gray-200">
