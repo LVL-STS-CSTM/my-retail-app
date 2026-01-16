@@ -2,7 +2,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Product } from '../types';
 import ProductGrid from './ProductGrid';
-// FIX: Correct import from DataContext
 import { useData } from '../context/DataContext';
 import { ViewGridSmallIcon, ViewGridLargeIcon, FilterIcon, CloseIcon } from './icons';
 import Accordion from './Accordion';
@@ -44,9 +43,6 @@ const categoryImageMap: Record<string, string> = {
     'Baby & Children': 'https://i.pinimg.com/1200x/00/8f/30/008f30c46f1ec098a9e064263497b17e.jpg',
 };
 
-/**
- * @description A visually-driven card for showcasing a product collection.
- */
 const CollectionCard: React.FC<{ name: string; imageUrl: string; onClick: () => void }> = ({ name, imageUrl, onClick }) => {
     return (
         <button
@@ -86,17 +82,12 @@ const FilterTag: React.FC<{ label: string; onRemove: () => void }> = ({ label, o
     </div>
 );
 
-
-/**
- * @description The main catalogue page, displaying either a collection overview or a filterable product grid.
- */
 const CataloguePage: React.FC<CataloguePageProps> = ({ products, onProductClick, initialFilter }) => {
     const { collections } = useData();
     const [sortOrder, setSortOrder] = useState<'default' | 'name-asc' | 'price-asc' | 'price-desc'>('default');
     const [layout, setLayout] = useState<'grid-sm' | 'grid-lg'>('grid-sm');
     const [isFilterVisible, setIsFilterVisible] = useState(false);
     
-    // State for all filters
     const [selectedFilters, setSelectedFilters] = useState<{
         group: string | null;
         category: string[];
@@ -104,7 +95,6 @@ const CataloguePage: React.FC<CataloguePageProps> = ({ products, onProductClick,
     }>({ group: null, category: [], gender: [] });
     const [showBestsellersOnly, setShowBestsellersOnly] = useState<boolean>(false);
 
-    // When navigating to the page with a pre-selected filter, apply it.
     useEffect(() => {
         if (initialFilter) {
             const { type, value } = initialFilter;
@@ -121,7 +111,6 @@ const CataloguePage: React.FC<CataloguePageProps> = ({ products, onProductClick,
         }
     }, [initialFilter, products]);
     
-    // Lock body scroll when mobile filter is open
     useEffect(() => {
         const body = document.body;
         if (isFilterVisible && window.innerWidth < 1024) {
@@ -134,8 +123,6 @@ const CataloguePage: React.FC<CataloguePageProps> = ({ products, onProductClick,
         };
     }, [isFilterVisible]);
 
-
-    // Memoize derived data for display
     const collectionData = useMemo(() => {
         return collections.map(collectionName => {
             const defaultImage = 'https://placehold.co/800x450?text=No+Image';
@@ -148,7 +135,6 @@ const CataloguePage: React.FC<CataloguePageProps> = ({ products, onProductClick,
         return selectedFilters.group !== null || selectedFilters.category.length > 0 || selectedFilters.gender.length > 0 || showBestsellersOnly;
     }, [selectedFilters, showBestsellersOnly]);
 
-    // Apply filtering and sorting to the product list
     const filteredAndSortedProducts = useMemo(() => {
         let filtered = products;
 
@@ -179,7 +165,6 @@ const CataloguePage: React.FC<CataloguePageProps> = ({ products, onProductClick,
 
     const bannerImage = useMemo(() => {
         if (!isAnyFilterActive) return undefined;
-        // Logic to find a representative banner image based on filters
         if (selectedFilters.category.length === 1 && selectedFilters.group && selectedFilters.gender.length === 0) {
             return categoryImageMap[selectedFilters.category[0]];
         }
@@ -198,7 +183,6 @@ const CataloguePage: React.FC<CataloguePageProps> = ({ products, onProductClick,
 
     const memoizedFilterOptions = useMemo(() => {
         const countItems = (items: Product[], key: 'categoryGroup' | 'category' | 'gender') => {
-            // FIX: Explicitly typing the `product` parameter as `Product` allows TypeScript to correctly infer its type within the reduce function, resolving the "unknown index type" error.
             return items.reduce((acc: Record<string, number>, product: Product) => {
                 const value = product[key];
                 if (typeof value === 'string' && value) {
@@ -226,11 +210,10 @@ const CataloguePage: React.FC<CataloguePageProps> = ({ products, onProductClick,
         };
     }, [products, collections, selectedFilters]);
     
-    // --- Event Handlers ---
     const handleGroupChange = (groupName: string) => {
         setSelectedFilters(prev => {
             const newGroup = prev.group === groupName ? null : groupName;
-            return { ...prev, group: newGroup, category: [] }; // Reset categories when group changes
+            return { ...prev, group: newGroup, category: [] };
         });
     };
 
@@ -259,7 +242,6 @@ const CataloguePage: React.FC<CataloguePageProps> = ({ products, onProductClick,
         setShowBestsellersOnly(false);
     };
 
-    // --- RENDER: Filter Panel ---
     const FilterPanel: React.FC<{ isMobile?: boolean }> = ({ isMobile }) => (
         <div className="flex flex-col h-full">
             <div className="p-4 flex justify-between items-center border-b">
@@ -342,8 +324,6 @@ const CataloguePage: React.FC<CataloguePageProps> = ({ products, onProductClick,
         </div>
     );
     
-
-    // --- RENDER: Collection Overview ---
     if (!isAnyFilterActive) {
         return (
             <div className="bg-white min-h-screen">
@@ -376,7 +356,6 @@ const CataloguePage: React.FC<CataloguePageProps> = ({ products, onProductClick,
         );
     }
     
-    // --- RENDER: Filtered View ---
     return (
         <div className="bg-white min-h-screen">
             <section className="relative h-[50vh] bg-gray-800 flex flex-col items-center justify-center text-white text-center p-4">
@@ -426,12 +405,10 @@ const CataloguePage: React.FC<CataloguePageProps> = ({ products, onProductClick,
 
             <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="lg:grid lg:grid-cols-4 lg:gap-x-8">
-                    {/* Desktop Sidebar */}
                     <aside className={`hidden lg:block lg:col-span-1 transition-all duration-300 ${isFilterVisible ? 'opacity-100' : 'opacity-0 w-0'}`}>
                         {isFilterVisible && <FilterPanel />}
                     </aside>
                     
-                    {/* Product Grid */}
                     <div className={isFilterVisible ? 'lg:col-span-3' : 'lg:col-span-4'}>
                         {isAnyFilterActive && (
                             <div className="mb-6 pb-4 border-b flex flex-wrap items-center gap-2">
@@ -457,7 +434,6 @@ const CataloguePage: React.FC<CataloguePageProps> = ({ products, onProductClick,
                 </div>
             </div>
 
-            {/* Mobile Filter Modal */}
             <div className={`fixed inset-0 z-40 lg:hidden flex items-center justify-center p-4 transition-all duration-300 ${isFilterVisible ? 'bg-black/50 backdrop-blur-sm' : 'bg-transparent pointer-events-none'}`} onClick={() => setIsFilterVisible(false)}>
                 <div 
                     className={`bg-white rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col transform transition-all duration-300 ease-out ${isFilterVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}
