@@ -69,18 +69,36 @@ export const onRequestPost = async (context: { env: Env; request: Request }) => 
     const { contact, items } = await request.json() as any;
     const token = await getAccessToken(env);
     
-    const body = {
-      values: [[
-        `QT-${Date.now()}`,
-        new Date().toISOString(),
-        'New',
+    const quoteId = `QT-${Date.now()}`;
+    const timestamp = new Date().toISOString();
+    const status = 'New';
+
+    const values = items.map((item: any) => {
+      const sizeBreakdown = Object.entries(item.sizeQuantities)
+        .map(([size, qty]) => `${size}: ${qty}`)
+        .join(', ');
+      
+      const totalQuantity = Object.values(item.sizeQuantities).reduce((sum: number, qty: number) => sum + qty, 0);
+
+      return [
+        quoteId,
+        timestamp,
+        status,
         contact.name,
         contact.email,
         contact.phone || '',
         contact.company || '',
         contact.message || '',
-        JSON.stringify(items)
-      ]]
+        item.product.name,
+        item.selectedColor.name,
+        sizeBreakdown,
+        totalQuantity,
+        JSON.stringify(item.customizations),
+      ];
+    });
+
+    const body = {
+      values: values,
     };
 
     const sheetRes = await fetch(
@@ -88,7 +106,7 @@ export const onRequestPost = async (context: { env: Env; request: Request }) => 
       {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
       }
     );
 
