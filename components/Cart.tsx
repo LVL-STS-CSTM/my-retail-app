@@ -129,7 +129,7 @@ const QuoteFormView: React.FC<{quoteItems: QuoteItem[], onSuccess: () => void, s
                 onSuccess(); // Trigger the success view.
             } else {
                 const errorData = await response.json();
-                showToast(`Error: ${errorData.message || 'Could not submit quote.'}`);
+                showToast(`Error: ${errorData.message || errorData.error || 'Could not submit quote.'}`);
             }
         } catch (error) {
             showToast('Error: Failed to connect to server.');
