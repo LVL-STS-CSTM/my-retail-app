@@ -100,6 +100,6 @@ export const onRequestPost = async (context: { env: Env; request: Request }) => 
     return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (err: any) {
     console.error(err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return new Response(JSON.stringify({ message: err.message }), { status: 500 });
   }
 };
