@@ -22,10 +22,10 @@ async function signJwt(email: string, privateKey: string, scope: string) {
   const encodedClaim = btoa(JSON.stringify(claim)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
   const message = `${encodedHeader}.${encodedClaim}`;
 
-  // Process the private key
+  // Process the private key, correcting for escaped newlines in environment variables
   const pemHeader = "-----BEGIN PRIVATE KEY-----";
   const pemFooter = "-----END PRIVATE KEY-----";
-  const pemContents = privateKey.replace(pemHeader, "").replace(pemFooter, "").replace(/\s/g, "");
+  const pemContents = privateKey.replace(pemHeader, "").replace(pemFooter, "").replace(/\s/g, "").replace(/\\n/g, "");
   const binaryKey = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
 
   const key = await crypto.subtle.importKey(
