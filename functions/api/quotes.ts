@@ -55,6 +55,10 @@ async function getAccessToken(env: Env) {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
   });
+  if (!res.ok) {
+    const errorBody = await res.text();
+    throw new Error(`Failed to get access token: ${res.status} ${res.statusText} - ${errorBody}`);
+  }
   const data: any = await res.json();
   return data.access_token;
 }
@@ -88,10 +92,14 @@ export const onRequestPost = async (context: { env: Env; request: Request }) => 
       }
     );
 
-    if (!sheetRes.ok) throw new Error('Failed to append to Google Sheets');
+    if (!sheetRes.ok) {
+      const errorBody = await sheetRes.text();
+      throw new Error(`Google Sheets API Error: ${sheetRes.status} ${sheetRes.statusText} - ${errorBody}`);
+    }
 
     return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (err: any) {
+    console.error(err);
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });
   }
 };
