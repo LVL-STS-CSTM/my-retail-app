@@ -1,10 +1,14 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { useLocation, useParams } from 'react-router-dom';
 import { useQuote } from '../context/CartContext';
 import { SearchIcon, UserIcon, CartIcon, MenuIcon, CloseIcon, ChevronDownIcon } from './icons';
 import { View } from '../types';
 import Accordion from './Accordion';
 import { useData } from '../context/DataContext';
+
+// Helper to convert a string to a URL-friendly slug
+const toSlug = (str: string) => str.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
 
 const IconButton: React.FC<{
     onClick?: React.MouseEventHandler<HTMLButtonElement>;
@@ -25,30 +29,29 @@ const IconButton: React.FC<{
 };
 
 interface HeaderProps {
-    onNavigate: (page: View, category?: string | null) => void;
+    onNavigate: (pageOrPath: View | string, filterValue?: string | null) => void;
     onQuoteClick: () => void;
     onSearchClick: () => void;
     onSubscribeClick: () => void;
-    view: View;
-    catalogueFilter: { type: 'group' | 'category' | 'gender'; value: string } | null;
     isScrolled: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick, onSubscribeClick, view, catalogueFilter, isScrolled }) => {
+const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick, onSubscribeClick, isScrolled }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
     const [isExploreMenuOpen, setIsExploreMenuOpen] = useState(false);
 
     const { quoteItems } = useQuote();
     const { products, collections } = useData();
+    const location = useLocation();
+    const params = useParams<{ group?: string }>();
 
     const quoteItemCount = quoteItems.length;
 
-    const isTransparent = view === 'home' && !isScrolled;
+    const isTransparent = !isScrolled;
     const headerClasses = isTransparent
         ? 'bg-transparent text-white'
         : 'bg-gray-800 bg-opacity-90 backdrop-blur-lg shadow-lg text-white';
-
 
     const productCategories = useMemo(() => {
         return collections.map(groupName => {
@@ -74,6 +77,21 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
         { label: 'Our Services', view: 'services' as View },
     ].sort((a, b) => a.label.localeCompare(b.label)), []);
 
+    const catalogueFilter = useMemo(() => {
+        const searchParams = new URLSearchParams(location.search);
+        const type = searchParams.get('type') as 'category' | 'gender' | null;
+        const value = searchParams.get('value');
+
+        if (params.group) {
+             const groupName = collections.find(c => toSlug(c) === params.group);
+             if (groupName) return { type: 'group' as const, value: groupName };
+        }
+        if (type && value) {
+            return { type, value };
+        }
+        return null;
+    }, [location.search, params.group, collections]);
+
     useEffect(() => {
         const body = document.body;
         if (isMobileMenuOpen) {
@@ -86,7 +104,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
         };
     }, [isMobileMenuOpen]);
 
-    const handleNavClick = (e: React.MouseEvent<HTMLElement>, page: View, category: string | null = null) => {
+    const handleNavClick = (e: React.MouseEvent<HTMLElement>, page: View | string, category: string | null = null) => {
         e.preventDefault();
         onNavigate(page, category);
         setIsMobileMenuOpen(false);
@@ -109,8 +127,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                                 <div onMouseEnter={() => { setIsMegaMenuOpen(true); setIsExploreMenuOpen(false); }}>
                                     <button
                                         onClick={(e) => handleNavClick(e, 'catalogue', null)}
-                                        className={`flex items-center space-x-1 text-sm font-medium uppercase tracking-wider transition-colors duration-200 ${view === 'catalogue' && !catalogueFilter ? 'text-white' : 'text-gray-300 hover:text-white'}`}
-                                    >
+                                        className={`flex items-center space-x-1 text-sm font-medium uppercase tracking-wider transition-colors duration-200 ${location.pathname.startsWith('/catalogue') && !catalogueFilter ? 'text-white' : 'text-gray-300 hover:text-white'}`}>
                                         <span>All Products</span>
                                         <ChevronDownIcon className={`w-4 h-4 transition-transform ${isMegaMenuOpen ? 'rotate-180' : ''}`} />
                                     </button>
@@ -121,45 +138,18 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                                         <ChevronDownIcon className={`w-4 h-4 transition-transform ${isExploreMenuOpen ? 'rotate-180' : ''}`} />
                                     </button>
                                     <div
-                                        className={`absolute top-full left-0 mt-2 min-w-max bg-white shadow-lg rounded-md border border-gray-100 transition-all duration-300 ease-in-out z-50 ${isExploreMenuOpen ? 'opacity-100 visible animate-fade-in-up [animation-duration:200ms]' : 'opacity-0 invisible'}`}
-                                    >
+                                        className={`absolute top-full left-0 mt-2 min-w-max bg-white shadow-lg rounded-md border border-gray-100 transition-all duration-300 ease-in-out z-50 ${isExploreMenuOpen ? 'opacity-100 visible animate-fade-in-up [animation-duration:200ms]' : 'opacity-0 invisible'}`}>
                                         <div className="py-2">
-                                            {exploreLinks.map(link => {
-                                                const linkContent = (
-                                                    <>
-                                                        <span>{link.label}</span>
-                                                        {(link as any).isLive && (
-                                                            <span className="relative flex h-2 w-2 ml-2">
-                                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                                                            </span>
-                                                        )}
-                                                    </>
-                                                );
-
-                                                if ((link as any).href) {
-                                                    return (
-                                                        <a
-                                                            key={link.label}
-                                                            href={(link as any).href}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="flex items-center justify-between w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors break-words"
-                                                        >
-                                                            {linkContent}
-                                                        </a>
-                                                    );
-                                                }
-                                                return (
-                                                    <button
-                                                        key={(link as any).view}
-                                                        onClick={(e) => handleNavClick(e, (link as any).view!)}
-                                                        className="flex items-center justify-between w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-                                                    >
-                                                        {linkContent}
-                                                    </button>
-                                                );
-                                            })}
+                                            {exploreLinks.map(link => (
+                                                <a
+                                                    key={link.view}
+                                                    href={`/${link.view}`}
+                                                    onClick={(e) => handleNavClick(e, link.view)}
+                                                    className="flex items-center justify-between w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                                                >
+                                                    <span>{link.label}</span>
+                                                </a>
+                                            ))}
                                         </div>
                                     </div>
                                 </div>
@@ -202,8 +192,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
 
                     <div
                         className={`absolute top-full left-0 right-0 bg-white shadow-lg border-t border-gray-100 transition-all duration-300 ease-in-out ${isMegaMenuOpen ? 'opacity-100 visible animate-fade-in-up [animation-duration:200ms]' : 'opacity-0 invisible'}`}
-                        onMouseLeave={() => setIsMegaMenuOpen(false)}
-                    >
+                        onMouseLeave={() => setIsMegaMenuOpen(false)}>
                         <div className="max-w-screen-2xl mx-auto px-8 py-6 grid grid-cols-6 gap-8">
                            {productCategories.map(group => (
                                <div key={group.groupName}>
@@ -243,8 +232,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
             <div className={`fixed inset-0 z-40 md:hidden ${isMobileMenuOpen ? '' : 'pointer-events-none'}`}>
                 <div
                     className={`fixed inset-0 bg-black/50 transition-opacity ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0'}`}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                ></div>
+                    onClick={() => setIsMobileMenuOpen(false)}></div>
 
                 <div className={`fixed top-0 left-0 h-full w-full max-w-sm bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? '-translate-x-0' : '-translate-x-full'}`}>
                     <div className="flex flex-col h-full">
@@ -266,8 +254,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                                                         <li>
                                                             <button 
                                                                 onClick={(e) => handleNavClick(e, 'catalogue', group.groupName)} 
-                                                                className="w-full text-left py-1.5 text-gray-600 hover:text-black font-medium text-sm"
-                                                            >
+                                                                className="w-full text-left py-1.5 text-gray-600 hover:text-black font-medium text-sm">
                                                                 All {group.groupName}
                                                             </button>
                                                         </li>
@@ -275,8 +262,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                                                             <li key={category}>
                                                                 <button 
                                                                     onClick={(e) => handleNavClick(e, 'catalogue', category)} 
-                                                                    className="w-full text-left py-1.5 text-gray-600 hover:text-black text-sm"
-                                                                >
+                                                                    className="w-full text-left py-1.5 text-gray-600 hover:text-black text-sm">
                                                                     {category}
                                                                 </button>
                                                             </li>
@@ -287,8 +273,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                                                 <div className="py-2 border-b border-gray-200">
                                                     <button 
                                                         onClick={(e) => handleNavClick(e, 'catalogue', group.groupName)}
-                                                        className="w-full flex justify-between items-center text-left p-2"
-                                                    >
+                                                        className="w-full flex justify-between items-center text-left p-2">
                                                         <span className="uppercase tracking-wider text-sm font-semibold text-gray-800">{group.groupName}</span>
                                                     </button>
                                                 </div>
@@ -310,37 +295,16 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                             </Accordion>
                             <Accordion title="Explore" theme="light">
                                 <ul className="pl-4 pt-2">
-                                    {exploreLinks.map(link => {
-                                        const linkContent = (
-                                            <>
+                                    {exploreLinks.map(link => (
+                                        <li key={link.view}>
+                                            <a
+                                                href={`/${link.view}`}
+                                                onClick={(e) => handleNavClick(e, link.view)}
+                                                className="flex items-center justify-between w-full text-left py-2 text-gray-700 hover:text-black">
                                                 <span>{link.label}</span>
-                                                {(link as any).isLive && (
-                                                    <span className="relative flex h-2 w-2">
-                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                                                    </span>
-                                                )}
-                                            </>
-                                        );
-                                        return (
-                                            <li key={link.label}>
-                                                {(link as any).href ? (
-                                                    <a
-                                                        href={(link as any).href}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="flex items-center justify-between w-full text-left py-2 text-gray-700 hover:text-black"
-                                                    >
-                                                        {linkContent}
-                                                    </a>
-                                                ) : (
-                                                    <button onClick={(e) => handleNavClick(e, (link as any).view!)} className="flex items-center justify-between w-full text-left py-2 text-gray-700 hover:text-black">
-                                                        {linkContent}
-                                                    </button>
-                                                )}
-                                            </li>
-                                        )
-                                    })}
+                                            </a>
+                                        </li>
+                                    ))}
                                 </ul>
                             </Accordion>
                         </nav>
