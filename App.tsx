@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom';
-import { Product, HeroContent, InfoCard, BrandReview, PlatformRating } from './types';
+import { Product, HeroContent, InfoCard, BrandReview, PlatformRating, View } from './types';
 import { QuoteProvider } from './context/CartContext';
 import { AdminProvider, useAdmin } from './context/AdminContext';
 import { DataProvider, useData } from './context/DataContext';
@@ -40,6 +40,9 @@ import WhyChooseUs from './components/WhyChooseUs';
 import HowWeWorkPage from './components/HowWeWorkPage';
 import AiAdvisor from './components/AiAdvisor';
 import { MockupGeneratorPage } from './components/MockupGeneratorPage';
+
+// Helper to convert a string to a URL-friendly slug
+const toSlug = (str: string) => str.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
 
 const NotFoundPage: React.FC = () => <div className="text-center py-20">Page not found</div>;
 
@@ -133,12 +136,36 @@ const AppContent: React.FC = () => {
         window.scrollTo(0, 0);
     }, [location.pathname]);
 
-    const handleNavigate = (path: string) => {
-        navigate(path);
+    const handleNavigate = (pageOrPath: View | string, filterValue?: string | null) => {
+        if (pageOrPath === 'home') {
+            navigate('/');
+            return;
+        }
+
+        if (pageOrPath === 'catalogue') {
+            if (filterValue) {
+                const isGroup = collections.includes(filterValue);
+                if (isGroup) {
+                    navigate(`/catalogue/${toSlug(filterValue)}`);
+                } else {
+                    const isGender = ['Men', 'Women', 'Unisex'].includes(filterValue);
+                    const type = isGender ? 'gender' : 'category';
+                    navigate(`/catalogue?type=${type}&value=${encodeURIComponent(filterValue)}`);
+                }
+            } else {
+                navigate('/catalogue');
+            }
+        } else {
+             // Handles simple paths like '/about', '/contact', etc.
+            navigate(pageOrPath.startsWith('/') ? pageOrPath : `/${pageOrPath}`);
+        }
     };
 
     const handleProductClick = (product: Product) => {
-        navigate(`/products/${product.id}`);
+        if (product && product.categoryGroup && product.id) {
+            const groupSlug = toSlug(product.categoryGroup);
+            navigate(`/catalogue/${groupSlug}/${product.id}`);
+        }
     };
 
     const handlePasswordSubmit = async (password: string, username: string) => {
@@ -168,20 +195,32 @@ const AppContent: React.FC = () => {
     };
 
     const ProductPageRoute: React.FC = () => {
-        const { productId } = useParams<{ productId: string }>();
+        const { productId } = useParams<{ group: string; productId: string }>();
         const selectedProduct = allProducts.find(p => p.id === productId);
-        return selectedProduct ? <ProductPage product={selectedProduct} onNavigate={handleNavigate} showToast={setToastMessage} materials={materials} allProducts={allProducts} onProductClick={handleProductClick} /> : <div className="text-center py-20">Product not found.</div>;
+        return selectedProduct ? <ProductPage product={selectedProduct} onNavigate={(path) => handleNavigate(path)} showToast={setToastMessage} materials={materials} allProducts={allProducts} onProductClick={handleProductClick} /> : <div className="text-center py-20">Product not found.</div>;
     };
 
     const CataloguePageRoute: React.FC = () => {
+        const { group: groupSlug } = useParams<{ group?: string }>();
         const { search } = useLocation();
         const params = new URLSearchParams(search);
-        const initialFilter = {
-            type: params.get('type') as 'group' | 'category' | 'gender' | null,
-            value: params.get('value')
-        };
 
-        return <CataloguePage products={allProducts} onProductClick={handleProductClick} initialFilter={initialFilter.type && initialFilter.value ? {type: initialFilter.type, value: initialFilter.value} : null} />;
+        let initialFilter: { type: 'group' | 'category' | 'gender'; value: string } | null = null;
+    
+        if (groupSlug) {
+            const groupName = collections.find(c => toSlug(c) === groupSlug);
+            if (groupName) {
+                initialFilter = { type: 'group', value: groupName };
+            }
+        } else {
+            const type = params.get('type') as 'group' | 'category' | 'gender' | null;
+            const value = params.get('value');
+            if (type && value) {
+                initialFilter = { type, value };
+            }
+        }
+
+        return <CataloguePage products={allProducts} onProductClick={handleProductClick} initialFilter={initialFilter} />;
     };
     
     const mainContentClass = `transition-opacity duration-500 ${isAppLoading ? 'opacity-0' : 'opacity-100'} ${location.pathname !== '/' ? 'pt-14' : ''}`;
@@ -193,46 +232,35 @@ const AppContent: React.FC = () => {
             <Header onNavigate={handleNavigate} onQuoteClick={() => setIsQuoteModalOpen(true)} onSearchClick={() => setIsSearchModalOpen(true)} onSubscribeClick={() => setIsSubscriptionModalOpen(true)} isScrolled={isScrolled || location.pathname !== '/'} />
             <main className={mainContentClass}>
                 <Routes>
-                    <Route path="/" element={<HomePage heroContents={heroContents} allProducts={allProducts} infoCards={infoCards} featuredVideoContent={featuredVideoContent} brandReviews={brandReviews} platformRatings={platformRatings} partners={partners} onNavigate={handleNavigate} onProductClick={handleProductClick} onCardClick={handleCardClick} />} />
-                    <Route path="/products/:productId" element={<ProductPageRoute />} />
+                    <Route path="/" element={<HomePage heroContents={heroContents} allProducts={allProducts} infoCards={infoCards} featuredVideoContent={featuredVideoContent} brandReviews={brandReviews} platformRatings={platformRatings} partners={partners} onNavigate={(path) => handleNavigate(path)} onProductClick={handleProductClick} onCardClick={handleCardClick} />} />
                     <Route path="/catalogue" element={<CataloguePageRoute />} />
-                    <Route path="/about" element={<AboutPage onNavigate={handleNavigate} />} />
-                    <Route path="/partners" element={<PartnersPage onNavigate={handleNavigate} />} />
+                    <Route path="/catalogue/:group" element={<CataloguePageRoute />} />
+                    <Route path="/catalogue/:group/:productId" element={<ProductPageRoute />} />
+                    <Route path="/about" element={<AboutPage onNavigate={(path) => handleNavigate(path)} />} />
+                    <Route path="/partners" element={<PartnersPage onNavigate={(path) => handleNavigate(path)} />} />
                     <Route path="/contact" element={<ContactPage showToast={setToastMessage} />} />
                     <Route path="/faq" element={<FaqPage faqData={faqData} />} />
-                    <Route path="/admin" element={isAuthenticated ? <AdminDashboard /> : <HomePage heroContents={heroContents} allProducts={allProducts} infoCards={infoCards} featuredVideoContent={featuredVideoContent} brandReviews={brandReviews} platformRatings={platformRatings} partners={partners} onNavigate={handleNavigate} onProductClick={handleProductClick} onCardClick={handleCardClick} />} />
-                    <Route path="/services" element={<ServicesPage onNavigate={handleNavigate} />} />
+                    <Route path="/admin" element={isAuthenticated ? <AdminDashboard /> : <HomePage heroContents={heroContents} allProducts={allProducts} infoCards={infoCards} featuredVideoContent={featuredVideoContent} brandReviews={brandReviews} platformRatings={platformRatings} partners={partners} onNavigate={(path) => handleNavigate(path)} onProductClick={handleProductClick} onCardClick={handleCardClick} />} />
+                    <Route path="/services" element={<ServicesPage onNavigate={(path) => handleNavigate(path)} />} />
                     <Route path="/terms-of-service" element={<TermsOfServicePage />} />
                     <Route path="/return-policy" element={<ReturnPolicyPage />} />
                     <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
                     <Route path="/materials" element={<FabricsPage />} />
                     <Route path="/athletes" element={<AthletesPage />} />
-                    <Route path="/community" element={<CommunityPage onNavigate={handleNavigate} />} />
+                    <Route path="/community" element={<CommunityPage onNavigate={(path) => handleNavigate(path)} />} />
                     <Route path="/how-we-work" element={<HowWeWorkPage />} />
                     <Route path="/mockup-generator" element={<MockupGeneratorPage />} />
                     <Route path="*" element={<NotFoundPage />} />
                 </Routes>
             </main>
-            <Footer onNavigate={handleNavigate} />
+            <Footer onNavigate={(path) => handleNavigate(path)} />
             <QuoteModal isOpen={isQuoteModalOpen} onClose={() => setIsQuoteModalOpen(false)} showToast={setToastMessage} />
             <SearchModal 
                 isOpen={isSearchModalOpen} 
                 onClose={() => setIsSearchModalOpen(false)} 
                 products={allProducts} 
                 onProductClick={(product) => { handleProductClick(product); setIsSearchModalOpen(false); }} 
-                onNavigate={(page, value) => { 
-                    let path = `/${page}`;
-                    if (value) {
-                        const isGroup = collections.includes(value);
-                        const isGender = ['Men', 'Women', 'Unisex'].includes(value);
-                        let type = 'category';
-                        if (isGroup) type = 'group';
-                        if (isGender) type = 'gender';
-                        path = `/catalogue?type=${type}&value=${value}`
-                    }
-                    handleNavigate(path);
-                    setIsSearchModalOpen(false); 
-                }} 
+                onNavigate={(page, value) => { handleNavigate(page, value); setIsSearchModalOpen(false); }} 
                 collections={collections} 
                 faqs={faqData} 
                 materials={materials} 
