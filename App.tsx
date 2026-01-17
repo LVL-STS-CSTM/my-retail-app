@@ -54,7 +54,7 @@ const HomePage: React.FC<{
     brandReviews: BrandReview[];
     platformRatings: PlatformRating[];
     partners: any[];
-    onNavigate: (path: string) => void;
+    onNavigate: (path: string, filterValue?: string) => void;
     onProductClick: (product: Product) => void;
     onCardClick: (card: InfoCard) => void;
 }> = ({ heroContents, allProducts, infoCards, featuredVideoContent, brandReviews, platformRatings, partners, onNavigate, onProductClick, onCardClick }) => {
@@ -142,7 +142,7 @@ const AppContent: React.FC = () => {
             return;
         }
 
-        if (pageOrPath === 'catalogue' || pageOrPath === 'all-products') {
+        if (pageOrPath === 'catalogue') {
             if (filterValue) {
                 const collectionName = collections.find(c => c.toLowerCase() === filterValue.toLowerCase());
                 if (collectionName) {
@@ -155,6 +155,8 @@ const AppContent: React.FC = () => {
             } else {
                 navigate('/catalogue');
             }
+        } else if (pageOrPath === 'all-products') {
+            navigate('/all-products');
         } else {
              // Handles simple paths like '/about', '/contact', etc.
             navigate(pageOrPath.startsWith('/') ? pageOrPath : `/${pageOrPath}`);
@@ -180,7 +182,7 @@ const AppContent: React.FC = () => {
     
     const handleCardClick = (card: InfoCard) => {
         if (card.linkType === 'page') {
-            handleNavigate(card.linkValue);
+            handleNavigate(card.linkValue, card.filterValue);
         } else if (card.linkType === 'modal') {
             if (card.linkValue === 'subscribe') setIsSubscriptionModalOpen(true);
             if (card.linkValue === 'search') setIsSearchModalOpen(true);
@@ -202,11 +204,12 @@ const AppContent: React.FC = () => {
 
     const CataloguePageRoute: React.FC = () => {
         const { collection: collectionSlug } = useParams<{ collection?: string }>();
-        const { search } = useLocation();
+        const { search, pathname } = useLocation();
         const params = new URLSearchParams(search);
 
         let initialFilter: { type: 'group' | 'category' | 'gender'; value: string } | null = null;
-    
+        let isCataloguePage = pathname === '/catalogue';
+
         if (collectionSlug) {
             const collectionName = collections.find(c => toSlug(c) === collectionSlug);
             if (collectionName) {
@@ -220,7 +223,7 @@ const AppContent: React.FC = () => {
             }
         }
 
-        return <CataloguePage products={allProducts} onProductClick={handleProductClick} initialFilter={initialFilter} />;
+        return <CataloguePage products={allProducts} onProductClick={handleProductClick} initialFilter={initialFilter} isCataloguePage={isCataloguePage} onNavigate={handleNavigate}/>;
     };
     
     const mainContentClass = `transition-opacity duration-500 ${isAppLoading ? 'opacity-0' : 'opacity-100'} ${location.pathname !== '/' ? 'pt-14' : ''}`;
@@ -232,7 +235,7 @@ const AppContent: React.FC = () => {
             <Header onNavigate={handleNavigate} onQuoteClick={() => setIsQuoteModalOpen(true)} onSearchClick={() => setIsSearchModalOpen(true)} onSubscribeClick={() => setIsSubscriptionModalOpen(true)} isScrolled={isScrolled || location.pathname !== '/'} />
             <main className={mainContentClass}>
                 <Routes>
-                    <Route path="/" element={<HomePage heroContents={heroContents} allProducts={allProducts} infoCards={infoCards} featuredVideoContent={featuredVideoContent} brandReviews={brandReviews} platformRatings={platformRatings} partners={partners} onNavigate={(path) => handleNavigate(path)} onProductClick={handleProductClick} onCardClick={handleCardClick} />} />
+                    <Route path="/" element={<HomePage heroContents={heroContents} allProducts={allProducts} infoCards={infoCards} featuredVideoContent={featuredVideoContent} brandReviews={brandReviews} platformRatings={platformRatings} partners={partners} onNavigate={handleNavigate} onProductClick={handleProductClick} onCardClick={handleCardClick} />} />
                     <Route path="/all-products" element={<CataloguePageRoute />} />
                     <Route path="/catalogue" element={<CataloguePageRoute />} />
                     <Route path="/:collection" element={<CataloguePageRoute />} />
@@ -241,7 +244,7 @@ const AppContent: React.FC = () => {
                     <Route path="/partners" element={<PartnersPage onNavigate={(path) => handleNavigate(path)} />} />
                     <Route path="/contact" element={<ContactPage showToast={setToastMessage} />} />
                     <Route path="/faq" element={<FaqPage faqData={faqData} />} />
-                    <Route path="/admin" element={isAuthenticated ? <AdminDashboard /> : <HomePage heroContents={heroContents} allProducts={allProducts} infoCards={infoCards} featuredVideoContent={featuredVideoContent} brandReviews={brandReviews} platformRatings={platformRatings} partners={partners} onNavigate={(path) => handleNavigate(path)} onProductClick={handleProductClick} onCardClick={handleCardClick} />} />
+                    <Route path="/admin" element={isAuthenticated ? <AdminDashboard /> : <HomePage heroContents={heroContents} allProducts={allProducts} infoCards={infoCards} featuredVideoContent={featuredVideoContent} brandReviews={brandReviews} platformRatings={platformRatings} partners={partners} onNavigate={handleNavigate} onProductClick={handleProductClick} onCardClick={handleCardClick} />} />
                     <Route path="/services" element={<ServicesPage onNavigate={(path) => handleNavigate(path)} />} />
                     <Route path="/terms-of-service" element={<TermsOfServicePage />} />
                     <Route path="/return-policy" element={<ReturnPolicyPage />} />

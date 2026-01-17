@@ -69,6 +69,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
     }, [products, collections]);
     
     const exploreLinks = useMemo(() => [
+        { label: 'Catalogue', view: 'catalogue' as View },
         { label: 'About Level', view: 'about' as View },
         { label: 'Contact', view: 'contact' as View },
         { label: 'How We Work', view: 'how-we-work' as View },
@@ -196,11 +197,11 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                         <div className="max-w-screen-2xl mx-auto px-8 py-6 grid grid-cols-6 gap-8">
                            {productCategories.map(group => (
                                <div key={group.groupName}>
-                                   <button onClick={(e) => handleNavClick(e, 'all-products', group.groupName)} className="font-oswald text-sm uppercase tracking-wider text-gray-800 mb-4 hover:text-black">{group.groupName}</button>
+                                   <button onClick={(e) => handleNavClick(e, 'catalogue', group.groupName)} className="font-oswald text-sm uppercase tracking-wider text-gray-800 mb-4 hover:text-black">{group.groupName}</button>
                                    <ul className="space-y-3">
                                        {group.categories.length > 0 ? group.categories.map(category => (
                                            <li key={category}>
-                                               <button onClick={(e) => handleNavClick(e, 'all-products', category)} className={`text-sm text-gray-500 hover:text-black transition-colors ${catalogueFilter?.type === 'category' && catalogueFilter.value === category ? 'text-black font-medium' : ''}`}>
+                                               <button onClick={(e) => handleNavClick(e, 'catalogue', category)} className={`text-sm text-gray-500 hover:text-black transition-colors ${catalogueFilter?.type === 'category' && catalogueFilter.value === category ? 'text-black font-medium' : ''}`}>
                                                    {category}
                                                </button>
                                            </li>
@@ -217,7 +218,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                                 <ul className="space-y-3">
                                     {['Men', 'Women', 'Unisex'].map(gender => (
                                         <li key={gender}>
-                                            <button onClick={(e) => handleNavClick(e, 'all-products', gender)} className={`text-sm text-gray-500 hover:text-black transition-colors ${catalogueFilter?.type === 'gender' && catalogueFilter.value === gender ? 'text-black font-medium' : ''}`}>
+                                            <button onClick={(e) => handleNavClick(e, 'catalogue', gender)} className={`text-sm text-gray-500 hover:text-black transition-colors ${catalogueFilter?.type === 'gender' && catalogueFilter.value === gender ? 'text-black font-medium' : ''}`}>
                                                 {gender}
                                             </button>
                                         </li>
@@ -253,7 +254,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                                                     <ul className="pl-4 pt-2 space-y-1">
                                                         <li>
                                                             <button 
-                                                                onClick={(e) => handleNavClick(e, 'all-products', group.groupName)} 
+                                                                onClick={(e) => handleNavClick(e, 'catalogue', group.groupName)} 
                                                                 className="w-full text-left py-1.5 text-gray-600 hover:text-black font-medium text-sm">
                                                                 All {group.groupName}
                                                             </button>
@@ -261,7 +262,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                                                         {group.categories.map(category => (
                                                             <li key={category}>
                                                                 <button 
-                                                                    onClick={(e) => handleNavClick(e, 'all-products', category)} 
+                                                                    onClick={(e) => handleNavClick(e, 'catalogue', category)} 
                                                                     className="w-full text-left py-1.5 text-gray-600 hover:text-black text-sm">
                                                                     {category}
                                                                 </button>
@@ -272,7 +273,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                                             ) : (
                                                 <div className="py-2 border-b border-gray-200">
                                                     <button 
-                                                        onClick={(e) => handleNavClick(e, 'all-products', group.groupName)}
+                                                        onClick={(e) => handleNavClick(e, 'catalogue', group.groupName)}
                                                         className="w-full flex justify-between items-center text-left p-2">
                                                         <span className="uppercase tracking-wider text-sm font-semibold text-gray-800">{group.groupName}</span>
                                                     </button>
@@ -286,7 +287,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                                 <ul className="pl-4 pt-2">
                                     {['Men', 'Women', 'Unisex'].map(gender => (
                                         <li key={gender}>
-                                            <button onClick={(e) => handleNavClick(e, 'all-products', gender)} className="block w-full text-left py-2 text-gray-700 hover:text-black">
+                                            <button onClick={(e) => handleNavClick(e, 'catalogue', gender)} className="block w-full text-left py-2 text-gray-700 hover:text-black">
                                                 {gender}
                                             </button>
                                         </li>

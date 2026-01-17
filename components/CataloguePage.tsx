@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Product } from '../types';
+import { Product, View } from '../types';
 import ProductGrid from './ProductGrid';
 import { useData } from '../context/DataContext';
 import { ViewGridSmallIcon, ViewGridLargeIcon, FilterIcon, CloseIcon } from './icons';
@@ -10,6 +10,8 @@ interface CataloguePageProps {
     products: Product[];
     onProductClick: (product: Product) => void;
     initialFilter: { type: 'group' | 'category' | 'gender'; value: string } | null;
+    isCataloguePage: boolean;
+    onNavigate: (pageOrPath: View | string, filterValue?: string | null) => void;
 }
 
 const collectionImageMap: Record<string, string> = {
@@ -82,7 +84,7 @@ const FilterTag: React.FC<{ label: string; onRemove: () => void }> = ({ label, o
     </div>
 );
 
-const CataloguePage: React.FC<CataloguePageProps> = ({ products, onProductClick, initialFilter }) => {
+const CataloguePage: React.FC<CataloguePageProps> = ({ products, onProductClick, initialFilter, isCataloguePage, onNavigate }) => {
     const { collections } = useData();
     const [sortOrder, setSortOrder] = useState<'default' | 'name-asc' | 'price-asc' | 'price-desc'>('default');
     const [layout, setLayout] = useState<'grid-sm' | 'grid-lg'>('grid-sm');
@@ -178,8 +180,8 @@ const CataloguePage: React.FC<CataloguePageProps> = ({ products, onProductClick,
     const pageTitle = useMemo(() => {
         if (selectedFilters.group) return selectedFilters.group;
         if (isAnyFilterActive) return "Filtered Results";
-        return "All Collections";
-    }, [selectedFilters, isAnyFilterActive]);
+        return isCataloguePage ? "All Collections" : "All Products";
+    }, [selectedFilters, isAnyFilterActive, isCataloguePage]);
 
     const memoizedFilterOptions = useMemo(() => {
         const countItems = (items: Product[], key: 'categoryGroup' | 'category' | 'gender') => {
@@ -211,10 +213,7 @@ const CataloguePage: React.FC<CataloguePageProps> = ({ products, onProductClick,
     }, [products, collections, selectedFilters]);
     
     const handleGroupChange = (groupName: string) => {
-        setSelectedFilters(prev => {
-            const newGroup = prev.group === groupName ? null : groupName;
-            return { ...prev, group: newGroup, category: [] };
-        });
+        onNavigate('catalogue', groupName);
     };
 
     const handleCategoryChange = (categoryName: string) => {
@@ -240,6 +239,8 @@ const CataloguePage: React.FC<CataloguePageProps> = ({ products, onProductClick,
     const clearFilters = () => {
         setSelectedFilters({ group: null, category: [], gender: [] });
         setShowBestsellersOnly(false);
+        if(!isCataloguePage) onNavigate('all-products');
+        else onNavigate('catalogue');
     };
 
     const FilterPanel: React.FC<{ isMobile?: boolean }> = ({ isMobile }) => (
@@ -324,7 +325,7 @@ const CataloguePage: React.FC<CataloguePageProps> = ({ products, onProductClick,
         </div>
     );
     
-    if (!isAnyFilterActive) {
+    if (isCataloguePage && !isAnyFilterActive) {
         return (
             <div className="bg-white min-h-screen">
                 <section className="relative h-[45vh] bg-gray-800 flex flex-col items-center justify-center text-white text-center p-4">
@@ -346,7 +347,7 @@ const CataloguePage: React.FC<CataloguePageProps> = ({ products, onProductClick,
                                 <CollectionCard
                                     name={cat.name}
                                     imageUrl={cat.imageUrl}
-                                    onClick={() => handleGroupChange(cat.name)}
+                                    onClick={() => onNavigate('catalogue', cat.name)}
                                 />
                             </div>
                         ))}
