@@ -8,28 +8,16 @@ import ProductGrid from './ProductGrid';
 import MaterialCareModal from './MaterialCareModal';
 import Button from './Button';
 
-/**
- * @interface ProductPageProps
- * @description Props for the ProductPage component.
- * @property {Product} product - The product to be displayed and configured.
- * @property {(page: View, category?: string) => void} onNavigate - Callback function to navigate back to the catalogue.
- * @property {(message: string) => void} showToast - Function to trigger a toast notification.
- * @property {Material[]} materials - List of all available materials.
- * @property {Product[]} allProducts - All products for finding related items.
- * @property {(product: Product) => void} onProductClick - Callback to navigate to another product.
- */
 interface ProductPageProps {
-    product: Product;
-    onNavigate: (page: View, category?: string) => void;
+    productSlug?: string;
+    colorSlug?: string;
+    onNavigate: (page: View, path?: string) => void;
     showToast: (message: string) => void;
     materials: Material[];
     allProducts: Product[];
-    onProductClick: (product: Product) => void;
+    onProductClick: (product: Product, color?: Color) => void;
 }
 
-/**
- * @description A redesigned, more compact file input component.
- */
 const FileInput: React.FC<{label: string, file: File | null, setFile: (file: File | null) => void, accept: string}> = ({ label, file, setFile, accept }) => (
     <div>
         <label className="block text-sm font-medium text-gray-700">{label}</label>
@@ -50,86 +38,92 @@ const FileInput: React.FC<{label: string, file: File | null, setFile: (file: Fil
     </div>
 );
 
+const ProductPage: React.FC<ProductPageProps> = ({ 
+    productSlug,
+    colorSlug,
+    onNavigate, 
+    showToast, 
+    materials, 
+    allProducts, 
+    onProductClick 
+}) => {
+    const product = useMemo(() => {
+        if (!productSlug) return null;
+        return allProducts.find(p => p.urlSlug === productSlug);
+    }, [productSlug, allProducts]);
 
-/**
- * @description The detailed product page, which acts as a configuration tool for adding items to a quote request.
- * Redesigned with a sticky configuration panel and a tabbed interface for a more compact and user-friendly experience.
- */
-const ProductPage: React.FC<ProductPageProps> = ({ product, onNavigate, showToast, materials, allProducts, onProductClick }) => {
-    // State for user's selections
-    const [selectedColor, setSelectedColor] = useState<Color | null>(product.availableColors[0] || null);
+    const initialColor = useMemo(() => {
+        if (!product) return null;
+        if (colorSlug) {
+            return product.availableColors.find(c => c.urlSlug === colorSlug) || product.availableColors[0] || null;
+        }
+        return product.availableColors[0] || null;
+    }, [product, colorSlug]);
+
+    const [selectedColor, setSelectedColor] = useState<Color | null>(initialColor);
     const [sizeQuantities, setSizeQuantities] = useState<{ [key: string]: number }>({});
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [designFile, setDesignFile] = useState<File | null>(null);
     const [customizations, setCustomizations] = useState<{ name: string; number: string; size: string }[]>([{ name: '', number: '', size: '' }]);
     
-    // State and refs for mobile image swiper
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     
-    // State for Material Care Modal
     const [isCareModalOpen, setIsCareModalOpen] = useState(false);
     const [selectedCareImage, setSelectedCareImage] = useState<string | undefined>(undefined);
 
-    // Get the image set for the currently selected color, with robust fallbacks.
     const imagesForDisplay = useMemo(() => {
+        if (!product) return [];
         if (selectedColor && product.imageUrls[selectedColor.name] && product.imageUrls[selectedColor.name].length > 0) {
             return product.imageUrls[selectedColor.name];
         }
-        // Fallback to the first color that has images.
         const firstColorWithImages = product.availableColors.find(c => product.imageUrls[c.name]?.length > 0);
         if (firstColorWithImages) {
             return product.imageUrls[firstColorWithImages.name];
         }
-        // Ultimate fallback: flatten all image URLs and use them.
         return Object.values(product.imageUrls).flat();
     }, [selectedColor, product]);
 
-    const [activeImageUrl, setActiveImageUrl] = useState<string>(imagesForDisplay[0] || '');
+    const [activeImageUrl, setActiveImageUrl] = useState<string>('');
 
-    // Access the addToQuote function from the global context.
     const { addToQuote } = useQuote();
     
-    // Find the associated material for the product
     const material = useMemo(() => {
-        if (!product.materialId || !materials) return null;
+        if (!product?.materialId || !materials) return null;
         return materials.find(m => m.id === product.materialId);
-    }, [product.materialId, materials]);
+    }, [product, materials]);
 
-    // Check if the product has a valid size chart to display
     const hasSizeChart = useMemo(() => {
+        if (!product) return false;
         return product.availableSizes && product.availableSizes.length > 0 && product.availableSizes.some(s => s.width > 0 && s.length > 0);
-    }, [product.availableSizes]);
+    }, [product]);
 
-    // Define the Minimum Order Quantity, using the custom product.moq if available.
-    const MOQ = product.moq && product.moq > 0
-        ? product.moq
-        : (product.category === 'Custom Jerseys' ? 1 : 12);
+    const MOQ = useMemo(() => {
+        if (!product) return 12;
+        return product.moq && product.moq > 0 
+            ? product.moq 
+            : (product.category === 'Custom Jerseys' ? 1 : 12);
+    }, [product]);
 
-    // Get related products for "You May Also Like"
     const relatedProducts = useMemo(() => {
-        if (!allProducts) return [];
+        if (!allProducts || !product) return [];
         return allProducts
             .filter(p => p.categoryGroup === product.categoryGroup && p.id !== product.id)
-            .sort(() => 0.5 - Math.random()) // Shuffle
-            .slice(0, 4); // Take 4 random products
+            .sort(() => 0.5 - Math.random())
+            .slice(0, 4);
     }, [allProducts, product]);
 
-
-    // Add error handlers for broken image links to improve robustness.
     const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
         e.currentTarget.src = 'https://placehold.co/600x800/f1f5f9/94a3b8?text=Image+Error';
-        e.currentTarget.onerror = null; // Prevent infinite loop
+        e.currentTarget.onerror = null;
     };
 
-    // useMemo to efficiently calculate the total quantity whenever sizeQuantities changes.
     const totalQuantity = useMemo(() => {
-        // FIX: Add explicit types to reduce callback parameters to fix type inference issue.
         return Object.values(sizeQuantities).reduce((sum: number, qty: number) => sum + (qty || 0), 0);
     }, [sizeQuantities]);
 
-    // useMemo to sort sizes intelligently. It handles standard apparel sizes and numerical sizes.
     const sortedSizes = useMemo(() => {
+        if (!product) return [];
         const sizeOrder = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
         return [...product.availableSizes].sort((a, b) => {
             const aIsNumeric = /^\d+$/.test(a.name);
@@ -144,9 +138,8 @@ const ProductPage: React.FC<ProductPageProps> = ({ product, onNavigate, showToas
             if(bIndex > -1) return 1;
             return a.name.localeCompare(b.name);
         });
-    }, [product.availableSizes]);
+    }, [product]);
     
-    // FIX: Add explicit type to the filter callback parameter to resolve the type error.
     const sizesWithQuantity = useMemo(() => sortedSizes.filter((size: ProductSize) => (sizeQuantities[size.name] || 0) > 0), [sortedSizes, sizeQuantities]);
     const customizationCountsPerSize = useMemo(() => {
         const counts: { [key: string]: number } = {};
@@ -156,18 +149,31 @@ const ProductPage: React.FC<ProductPageProps> = ({ product, onNavigate, showToas
         return counts;
     }, [customizations]);
 
-    // Effect to reset state when the product changes
     useEffect(() => {
-        const firstColor = product.availableColors[0] || null;
-        setSelectedColor(firstColor);
-        setCustomizations([{ name: '', number: '', size: '' }]);
-        setSizeQuantities({});
-    }, [product]);
+        if (product) {
+            const newInitialColor = colorSlug 
+                ? product.availableColors.find(c => c.urlSlug === colorSlug) || product.availableColors[0] || null
+                : product.availableColors[0] || null;
+            setSelectedColor(newInitialColor);
+            setCustomizations([{ name: '', number: '', size: '' }]);
+            setSizeQuantities({});
+        } 
+    }, [product, colorSlug]);
 
-    // Effect to update the active image when the displayed image set changes (e.g., due to color selection)
     useEffect(() => {
-        setActiveImageUrl(imagesForDisplay[0] || '');
-    }, [imagesForDisplay]);
+        if (imagesForDisplay.length > 0) {
+            setActiveImageUrl(imagesForDisplay[currentImageIndex] || imagesForDisplay[0]);
+        } else {
+            setActiveImageUrl('https://placehold.co/600x800/f1f5f9/94a3b8?text=No+Image');
+        }
+    }, [imagesForDisplay, currentImageIndex]);
+
+    useEffect(() => {
+      if (selectedColor && product?.urlSlug) {
+          const newPath = `/products/${product.urlSlug}/${selectedColor.urlSlug}`;
+          window.history.replaceState(null, '', newPath);
+      }
+    }, [selectedColor, product?.urlSlug]);
 
     const handleScroll = () => {
         if (scrollContainerRef.current) {
@@ -175,11 +181,11 @@ const ProductPage: React.FC<ProductPageProps> = ({ product, onNavigate, showToas
             const index = Math.round(scrollLeft / offsetWidth);
             if (index !== currentImageIndex) {
                 setCurrentImageIndex(index);
+                setActiveImageUrl(imagesForDisplay[index]);
             }
         }
     };
     
-    // Material Care Modal Handlers
     const openCareModal = (imageUrl?: string) => {
         setSelectedCareImage(imageUrl);
         setIsCareModalOpen(true);
@@ -208,7 +214,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ product, onNavigate, showToas
     const handleRemoveCustomization = (index: number) => setCustomizations(prev => prev.filter((_, i) => i !== index));
 
     const handleAddToQuote = () => {
-        if (!selectedColor) return;
+        if (!product || !selectedColor) return;
         const isCustomJersey = product.category === 'Custom Jerseys';
         if (totalQuantity === 0) { alert('Please enter a quantity for at least one size.'); return; }
 
@@ -229,7 +235,6 @@ const ProductPage: React.FC<ProductPageProps> = ({ product, onNavigate, showToas
             for (const size in finalCustomizationCounts) { if (!sizeQuantities[size] || sizeQuantities[size] === 0) { alert(`You have provided customizations for size ${size}, but the quantity for this size is 0.`); return; } }
         }
         
-        // FIX: Replaced filter().reduce() with a single typed reduce() to fix type inference issue on `qty > 0`.
         const finalSizeQuantities = Object.entries(sizeQuantities).reduce((acc: Record<string, number>, [size, qty]: [string, number]) => { if (qty > 0) { acc[size] = qty; } return acc; }, {});
         if (Object.keys(finalSizeQuantities).length === 0) return;
         const finalCustomizations = isCustomJersey ? customizations.filter(c => c.size && (c.name.trim() || c.number.trim())) : undefined;
@@ -238,8 +243,8 @@ const ProductPage: React.FC<ProductPageProps> = ({ product, onNavigate, showToas
         setSizeQuantities({}); setLogoFile(null); setDesignFile(null); setCustomizations([{ name: '', number: '', size: '' }]);
     };
     
-    // FIX: Use React.FC to correctly type the component and handle props like `key`.
     const ColorSwatch: React.FC<{ color: Color }> = ({ color }) => {
+        if (!product) return null;
         const imageUrl = (product.imageUrls[color.name] && product.imageUrls[color.name][0]) || 'https://placehold.co/80x80/f1f5f9/94a3b8?text=N/A';
         const isSelected = selectedColor?.name === color.name;
         
@@ -260,9 +265,21 @@ const ProductPage: React.FC<ProductPageProps> = ({ product, onNavigate, showToas
         )
     };
 
+    if (!product) {
+        return (
+            <div className="text-center py-20">
+                <h2 className="text-2xl font-bold">Product Not Found</h2>
+                <p className="text-gray-600 mt-2">The product you're looking for doesn't exist.</p>
+                <button onClick={() => onNavigate('catalogue')} className="mt-6 text-sm font-semibold text-indigo-600 hover:text-indigo-800">
+                    &larr; Back to Catalogue
+                </button>
+            </div>
+        );
+    }
+
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <button onClick={() => onNavigate('catalogue', product.category)} className="text-sm text-gray-600 hover:text-black mb-8">
+            <button onClick={() => onNavigate('catalogue', product.categoryGroup)} className="text-sm text-gray-600 hover:text-black mb-8">
                 &larr; Back to {product.categoryGroup}
             </button>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -463,7 +480,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ product, onNavigate, showToas
                     <h2 className="font-oswald text-2xl md:text-3xl text-center mb-8 uppercase tracking-wider text-gray-900">
                         You May Also Like
                     </h2>
-                    <ProductGrid products={relatedProducts} onProductClick={onProductClick} />
+                    <ProductGrid products={relatedProducts} onProductClick={(p) => onProductClick(p)} />
                 </div>
             )}
 

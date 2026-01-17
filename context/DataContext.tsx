@@ -36,6 +36,13 @@ const dataKeys = [
     'brandReviews', 'platformRatings', 'athletes', 'communityPosts'
 ];
 
+const generateSlug = (text: string) => {
+    return text
+        .toLowerCase()
+        .replace(/ /g, '-')
+        .replace(/[^\w-]+/g, '');
+};
+
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [data, setData] = useState<Partial<Omit<DataContextType, 'isLoading' | 'error' | 'updateData' | 'fetchData'>>>({});
     const [isLoading, setIsLoading] = useState(true);
@@ -48,7 +55,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const responses = await Promise.all(dataKeys.map(key =>
                 fetch(`/api/data/${key}`).then(res => {
                     if (!res.ok) {
-                        // Don't throw for 404s, just return null
                         if (res.status === 404) return null;
                         throw new Error(`Failed to fetch ${key}: ${res.statusText}`);
                     }
@@ -62,6 +68,23 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     (newData as any)[dataKeys[index]] = resData;
                 }
             });
+
+            if (newData.products) {
+                newData.products = newData.products.map(product => {
+                    const productWithSlug = {
+                        ...product,
+                        urlSlug: generateSlug(product.name)
+                    };
+                    if (productWithSlug.availableColors) {
+                        productWithSlug.availableColors = productWithSlug.availableColors.map(color => ({
+                            ...color,
+                            urlSlug: generateSlug(color.name)
+                        }));
+                    }
+                    return productWithSlug;
+                });
+            }
+
             setData(newData);
 
         } catch (err: any) {
@@ -92,7 +115,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 throw new Error(`API error: ${response.statusText}`);
             }
 
-            // Update local state to reflect changes immediately
             setData(prev => ({ ...prev, [key]: newData }));
             return true;
 

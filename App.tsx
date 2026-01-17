@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom';
-import { Product, HeroContent, InfoCard, BrandReview, PlatformRating, View } from './types';
+import { Product, HeroContent, InfoCard, BrandReview, PlatformRating, View, Color } from './types';
 import { QuoteProvider } from './context/CartContext';
 import { AdminProvider, useAdmin } from './context/AdminContext';
 import { DataProvider, useData } from './context/DataContext';
@@ -41,7 +41,6 @@ import HowWeWorkPage from './components/HowWeWorkPage';
 import AiAdvisor from './components/AiAdvisor';
 import { MockupGeneratorPage } from './components/MockupGeneratorPage';
 
-// Helper to convert a string to a URL-friendly slug
 const toSlug = (str: string) => str.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
 
 const NotFoundPage: React.FC = () => <div className="text-center py-20">Page not found</div>;
@@ -55,7 +54,7 @@ const HomePage: React.FC<{
     platformRatings: PlatformRating[];
     partners: any[];
     onNavigate: (path: string, filterValue?: string) => void;
-    onProductClick: (product: Product) => void;
+    onProductClick: (product: Product, color?: Color) => void;
     onCardClick: (card: InfoCard) => void;
 }> = ({ heroContents, allProducts, infoCards, featuredVideoContent, brandReviews, platformRatings, partners, onNavigate, onProductClick, onCardClick }) => {
     const homeHero = heroContents.find(h => h.displayOrder === 0);
@@ -158,15 +157,18 @@ const AppContent: React.FC = () => {
         } else if (pageOrPath === 'all-products') {
             navigate('/all-products');
         } else {
-             // Handles simple paths like '/about', '/contact', etc.
             navigate(pageOrPath.startsWith('/') ? pageOrPath : `/${pageOrPath}`);
         }
     };
 
-    const handleProductClick = (product: Product) => {
-        if (product && product.categoryGroup && product.id) {
-            const groupSlug = toSlug(product.categoryGroup);
-            navigate(`/${groupSlug}/${product.id}`);
+    const handleProductClick = (product: Product, color?: Color) => {
+        if (product && product.urlSlug) {
+            const colorSlug = color?.urlSlug || product.availableColors[0]?.urlSlug;
+            if (colorSlug) {
+                navigate(`/products/${product.urlSlug}/${colorSlug}`);
+            } else {
+                navigate(`/products/${product.urlSlug}`);
+            }
         }
     };
 
@@ -182,7 +184,7 @@ const AppContent: React.FC = () => {
     
     const handleCardClick = (card: InfoCard) => {
         if (card.linkType === 'page') {
-            handleNavigate(card.linkValue, card.filterValue);
+            handleNavigate(card.linkValue as View, card.linkValue);
         } else if (card.linkType === 'modal') {
             if (card.linkValue === 'subscribe') setIsSubscriptionModalOpen(true);
             if (card.linkValue === 'search') setIsSearchModalOpen(true);
@@ -197,9 +199,8 @@ const AppContent: React.FC = () => {
     };
 
     const ProductPageRoute: React.FC = () => {
-        const { collection: collectionSlug, productId } = useParams<{ collection: string; productId: string }>();
-        const selectedProduct = allProducts.find(p => p.id === productId);
-        return selectedProduct ? <ProductPage product={selectedProduct} onNavigate={(path) => handleNavigate(path)} showToast={setToastMessage} materials={materials} allProducts={allProducts} onProductClick={handleProductClick} /> : <div className="text-center py-20">Product not found.</div>;
+        const { productSlug, colorSlug } = useParams<{ productSlug: string; colorSlug: string }>();
+        return <ProductPage productSlug={productSlug} colorSlug={colorSlug} onNavigate={handleNavigate} showToast={setToastMessage} materials={materials} allProducts={allProducts} onProductClick={handleProductClick} />;
     };
 
     const CataloguePageRoute: React.FC = () => {
@@ -238,8 +239,8 @@ const AppContent: React.FC = () => {
                     <Route path="/" element={<HomePage heroContents={heroContents} allProducts={allProducts} infoCards={infoCards} featuredVideoContent={featuredVideoContent} brandReviews={brandReviews} platformRatings={platformRatings} partners={partners} onNavigate={handleNavigate} onProductClick={handleProductClick} onCardClick={handleCardClick} />} />
                     <Route path="/all-products" element={<CataloguePageRoute />} />
                     <Route path="/catalogue" element={<CataloguePageRoute />} />
+                    <Route path="/products/:productSlug/:colorSlug?" element={<ProductPageRoute />} />
                     <Route path="/:collection" element={<CataloguePageRoute />} />
-                    <Route path="/:collection/:productId" element={<ProductPageRoute />} />
                     <Route path="/about" element={<AboutPage onNavigate={(path) => handleNavigate(path)} />} />
                     <Route path="/partners" element={<PartnersPage onNavigate={(path) => handleNavigate(path)} />} />
                     <Route path="/contact" element={<ContactPage showToast={setToastMessage} />} />

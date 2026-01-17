@@ -62,8 +62,8 @@ const CollectionCard: React.FC<{ name: string; imageUrl: string; onClick: () => 
                     target.src = 'https://placehold.co/800x450/4F4F4F/FFFFFF?text=Image+Not+Found';
                 }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
-            <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none"></div>
+            <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 pointer-events-none">
                 <h2
                     className="font-oswald text-2xl md:text-3xl tracking-wider uppercase"
                     style={{ textShadow: '0 1px 5px rgba(0,0,0,0.8)' }}
@@ -329,8 +329,8 @@ const CataloguePage: React.FC<CataloguePageProps> = ({ products, onProductClick,
         return (
             <div className="bg-white min-h-screen">
                 <section className="relative h-[45vh] bg-gray-800 flex flex-col items-center justify-center text-white text-center p-4">
-                    <img src={collectionData[0]?.imageUrl || ''} alt="Product Collections" className="absolute inset-0 w-full h-full object-cover opacity-40" />
-                    <div className="relative z-10">
+                    <img src={collectionData[0]?.imageUrl || ''} alt="Product Collections" className="absolute inset-0 w-full h-full object-cover opacity-40 pointer-events-none" />
+                    <div className="relative z-10 pointer-events-none">
                         <h1 className="font-heading text-4xl md:text-5xl tracking-tight uppercase" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.7)' }}>
                             Our Collections
                         </h1>
@@ -360,9 +360,9 @@ const CataloguePage: React.FC<CataloguePageProps> = ({ products, onProductClick,
     return (
         <div className="bg-white min-h-screen">
             <section className="relative h-[50vh] bg-gray-800 flex flex-col items-center justify-center text-white text-center p-4">
-                {bannerImage && <img src={bannerImage} alt={pageTitle} className="absolute inset-0 w-full h-full object-cover" />}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
-                <div className="relative z-10">
+                {bannerImage && <img src={bannerImage} alt={pageTitle} className="absolute inset-0 w-full h-full object-cover pointer-events-none" />}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none"></div>
+                <div className="relative z-10 pointer-events-none">
                     <h1 className="font-heading text-4xl md:text-6xl tracking-tight uppercase" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.7)' }}>
                         {pageTitle}
                     </h1>
