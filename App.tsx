@@ -144,16 +144,16 @@ const AppContent: React.FC = () => {
 
         if (pageOrPath === 'catalogue' || pageOrPath === 'all-products') {
             if (filterValue) {
-                const isCollection = collections.includes(filterValue);
-                if (isCollection) {
-                    navigate(`/${toSlug(filterValue)}`);
+                const collectionName = collections.find(c => c.toLowerCase() === filterValue.toLowerCase());
+                if (collectionName) {
+                    navigate(`/${toSlug(collectionName)}`);
                 } else {
                     const isGender = ['Men', 'Women', 'Unisex'].includes(filterValue);
                     const type = isGender ? 'gender' : 'category';
                     navigate(`/all-products?type=${type}&value=${encodeURIComponent(filterValue)}`);
                 }
             } else {
-                navigate('/all-products');
+                navigate('/catalogue');
             }
         } else {
              // Handles simple paths like '/about', '/contact', etc.
@@ -234,6 +234,7 @@ const AppContent: React.FC = () => {
                 <Routes>
                     <Route path="/" element={<HomePage heroContents={heroContents} allProducts={allProducts} infoCards={infoCards} featuredVideoContent={featuredVideoContent} brandReviews={brandReviews} platformRatings={platformRatings} partners={partners} onNavigate={(path) => handleNavigate(path)} onProductClick={handleProductClick} onCardClick={handleCardClick} />} />
                     <Route path="/all-products" element={<CataloguePageRoute />} />
+                    <Route path="/catalogue" element={<CataloguePageRoute />} />
                     <Route path="/:collection" element={<CataloguePageRoute />} />
                     <Route path="/:collection/:productId" element={<ProductPageRoute />} />
                     <Route path="/about" element={<AboutPage onNavigate={(path) => handleNavigate(path)} />} />
