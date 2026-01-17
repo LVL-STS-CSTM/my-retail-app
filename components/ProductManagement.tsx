@@ -1,12 +1,12 @@
+
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useData } from '../context/DataContext';
 import { Product } from '../types';
 import ProductFormModal from './ProductFormModal';
-import { DragHandleIcon, SearchIcon } from './icons';
+import { DragHandleIcon, SearchIcon, EditIcon, TrashIcon } from './icons';
 
-// A simple sort icon component to show sort direction
 const SortIcon: React.FC<{ direction?: 'asc' | 'desc' }> = ({ direction }) => {
-    if (!direction) return <span className="w-4 h-4 inline-block text-gray-400"></span>; // No icon if not active sort key
+    if (!direction) return <span className="w-4 h-4 inline-block text-gray-400"></span>;
     return direction === 'asc' ? <span className="w-4 h-4 inline-block ml-1">↑</span> : <span className="w-4 h-4 inline-block ml-1">↓</span>;
 };
 
@@ -16,33 +16,24 @@ const ProductManagement: React.FC = () => {
     const { products, updateData } = useData();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [productToEdit, setProductToEdit] = useState<Product | null>(null);
-
-    // State for searching and sorting
     const [searchTerm, setSearchTerm] = useState('');
     const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'asc' | 'desc' } | null>(null);
-
-    // State for drag-and-drop reordering
     const [localProductOrder, setLocalProductOrder] = useState<Product[]>([]);
     const [hasOrderChanges, setHasOrderChanges] = useState(false);
 
     const dragItem = useRef<number | null>(null);
     const dragOverItem = useRef<number | null>(null);
 
-    // We are in reordering mode only if no search or sort is active.
     const isReorderingMode = !searchTerm && !sortConfig;
 
-    // Initialize local order whenever the canonical product list from context changes.
     useEffect(() => {
         setLocalProductOrder([...products].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)));
         setHasOrderChanges(false);
     }, [products]);
 
-    // Memoize the list of products to be displayed based on current state.
     const displayedProducts = useMemo(() => {
-        // Start with the correct source: local order for reordering, canonical list otherwise.
         let items: Product[] = isReorderingMode ? [...localProductOrder] : [...products];
 
-        // Apply search filter if there's a search term.
         if (searchTerm) {
             const lowercasedTerm = searchTerm.toLowerCase();
             items = items.filter(p =>
@@ -54,7 +45,6 @@ const ProductManagement: React.FC = () => {
             );
         }
 
-        // Apply sorting if a sort config is set.
         if (sortConfig) {
             items.sort((a, b) => {
                 const aVal = a[sortConfig.key];
@@ -64,14 +54,12 @@ const ProductManagement: React.FC = () => {
                 return 0;
             });
         } else if (!isReorderingMode) {
-            // If not reordering but also not sorting, use the default display order.
             items.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
         }
 
         return items;
     }, [products, localProductOrder, searchTerm, sortConfig, isReorderingMode]);
     
-    // Toggles sorting direction or changes sort key.
     const requestSort = (key: SortableKeys) => {
         let direction: 'asc' | 'desc' = 'asc';
         if (sortConfig?.key === key && sortConfig.direction === 'asc') {
@@ -80,7 +68,6 @@ const ProductManagement: React.FC = () => {
         setSortConfig({ key, direction });
     };
 
-    // Resets view to default reordering mode.
     const resetToReorderingMode = () => {
         setSortConfig(null);
         setSearchTerm('');
@@ -103,7 +90,6 @@ const ProductManagement: React.FC = () => {
         }
     };
 
-    // Drag and Drop Handlers
     const handleDragStart = (e: React.DragEvent<HTMLTableRowElement>, index: number) => {
         dragItem.current = index;
         e.currentTarget.classList.add('bg-gray-100', 'shadow-lg');
@@ -126,7 +112,6 @@ const ProductManagement: React.FC = () => {
         dragOverItem.current = null;
     };
     
-    // Save/Cancel for reordering
     const handleSaveOrder = () => {
         const reorderedProducts = localProductOrder.map((p, index) => ({ ...p, displayOrder: index }));
         updateData('products', reorderedProducts);
@@ -228,7 +213,7 @@ const ProductManagement: React.FC = () => {
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">MOQ</th>
                                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Bestseller</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th className="sticky right-0 bg-gray-50 px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -252,13 +237,15 @@ const ProductManagement: React.FC = () => {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.gender}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.moq ?? (product.category === 'Custom Jerseys' ? 1 : 12)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{product.isBestseller ? 'Yes' : 'No'}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-4">
-                                        <button onClick={() => handleEdit(product)} className="text-indigo-600 hover:text-indigo-900">
-                                            Edit
-                                        </button>
-                                        <button onClick={() => handleDelete(product.id)} className="text-red-600 hover:text-red-900">
-                                            Delete
-                                        </button>
+                                    <td className="sticky right-0 bg-white px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div className="flex items-center justify-center space-x-2">
+                                            <button onClick={() => handleEdit(product)} className="p-2 text-gray-500 hover:text-indigo-600 rounded-full hover:bg-gray-100 transition-colors" aria-label="Edit Product">
+                                                <EditIcon className="w-5 h-5" />
+                                            </button>
+                                            <button onClick={() => handleDelete(product.id)} className="p-2 text-gray-500 hover:text-red-600 rounded-full hover:bg-gray-100 transition-colors" aria-label="Delete Product">
+                                                <TrashIcon className="w-5 h-5" />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

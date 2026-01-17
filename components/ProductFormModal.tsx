@@ -4,12 +4,9 @@ import { Product, Color, ProductSize } from '../types';
 import { useData } from '../context/DataContext';
 import { CloseIcon, PlusIcon, TrashIcon, SparklesIcon } from './icons';
 import { generateProductDescription } from '../services/geminiService';
-import Accordion from './Accordion';
 
-// Helper function to check if a string is a valid hex color
 const isHexColor = (hex: string): boolean => /^#?([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/i.test(hex);
 
-// Helper function to determine if the text on a background color should be black or white
 const getTextColorForBg = (hexColor: string): 'black' | 'white' => {
     if (!isHexColor(hexColor)) return 'black';
 
@@ -26,10 +23,9 @@ const getTextColorForBg = (hexColor: string): 'black' | 'white' => {
         const brightness = (r * 299 + g * 587 + b * 114) / 1000;
         return brightness > 128 ? 'black' : 'white';
     } catch (e) {
-        return 'black'; // Fallback
+        return 'black';
     }
 };
-
 
 interface ProductFormModalProps {
     isOpen: boolean;
@@ -68,7 +64,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
         updateData('products', newProducts);
     }
 
-
     useEffect(() => {
         if (productToEdit) {
             setFormData({
@@ -105,7 +100,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
         }
     };
     
-    // --- Image URL Management ---
     const handleImageUrlChange = (colorName: string, index: number, value: string) => {
         setFormData(prev => {
             const newImageUrls = { ...prev.imageUrls };
@@ -136,7 +130,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
         });
     };
 
-    // --- Size Management ---
     const handleSizeChange = (index: number, field: keyof ProductSize, value: string | number) => {
         const newSizes = [...formData.availableSizes];
         const updatedSize = { ...newSizes[index] };
@@ -165,11 +158,10 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
         }));
     };
 
-    // --- Color Management ---
     const handleAddColor = () => {
         if (newColor.name && newColor.hex) {
             setFormData(prev => {
-                 const newImageUrls = { ...prev.imageUrls, [newColor.name]: [] }; // Add new color to imageUrls
+                 const newImageUrls = { ...prev.imageUrls, [newColor.name]: [] };
                 return {
                     ...prev,
                     imageUrls: newImageUrls,
@@ -182,7 +174,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
     const handleRemoveColor = (colorNameToRemove: string) => {
         setFormData(prev => {
             const newImageUrls = { ...prev.imageUrls };
-            delete newImageUrls[colorNameToRemove]; // Remove color from imageUrls
+            delete newImageUrls[colorNameToRemove];
             return {
                 ...prev,
                 imageUrls: newImageUrls,
@@ -219,7 +211,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
             }
         });
 
-        // Basic validation
         if (!formData.name || Object.values(finalImageUrls).flat().length === 0 || !formData.category || !formData.categoryGroup) {
             alert('Please fill out all required fields: Name, Category, Group, and at least one image URL for any color.');
             return;
@@ -303,14 +294,14 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
                         </div>
                     </div>
                     
-                     {/* Image URL Management UI */}
                     <div className="p-3 border rounded-md">
                         <label className="block text-sm font-medium text-gray-700 mb-2">Image URLs by Color</label>
-                         {formData.availableColors.length > 0 ? (
-                            <div className="space-y-1">
+                        {formData.availableColors.length > 0 ? (
+                            <div className="space-y-4">
                                 {formData.availableColors.map(color => (
-                                    <Accordion key={color.name} title={color.name}>
-                                        <div className="space-y-2 p-2">
+                                    <div key={color.name}>
+                                        <h4 className="text-md font-semibold text-gray-800 mb-2">{color.name}</h4>
+                                        <div className="space-y-2">
                                             {(formData.imageUrls[color.name] || []).map((url, index) => (
                                                 <div key={index} className="flex items-center gap-2">
                                                     <input 
@@ -337,7 +328,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
                                                 <PlusIcon className="w-4 h-4 mr-1"/> Add Image for {color.name}
                                             </button>
                                         </div>
-                                    </Accordion>
+                                    </div>
                                 ))}
                             </div>
                         ) : (
@@ -444,7 +435,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
                         </select>
                     </div>
 
-                    {/* Size Management UI */}
                     <div className="p-3 border rounded-md">
                         <label className="block text-sm font-medium text-gray-700 mb-2">Available Sizes</label>
                         <div className="space-y-2">
@@ -486,7 +476,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
                         </button>
                     </div>
 
-                    {/* Color Management UI */}
                     <div className="p-3 border rounded-md">
                         <label className="block text-sm font-medium text-gray-700 mb-2">Available Colors</label>
                         <div className="flex gap-2 mb-2 items-center">
