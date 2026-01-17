@@ -44,7 +44,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
     const { quoteItems } = useQuote();
     const { products, collections } = useData();
     const location = useLocation();
-    const params = useParams<{ group?: string }>();
+    const { collection: collectionSlug } = useParams<{ collection?: string }>();
 
     const quoteItemCount = quoteItems.length;
 
@@ -82,15 +82,15 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
         const type = searchParams.get('type') as 'category' | 'gender' | null;
         const value = searchParams.get('value');
 
-        if (params.group) {
-             const groupName = collections.find(c => toSlug(c) === params.group);
-             if (groupName) return { type: 'group' as const, value: groupName };
+        if (collectionSlug) {
+             const collectionName = collections.find(c => toSlug(c) === collectionSlug);
+             if (collectionName) return { type: 'group' as const, value: collectionName };
         }
         if (type && value) {
             return { type, value };
         }
         return null;
-    }, [location.search, params.group, collections]);
+    }, [location.search, collectionSlug, collections]);
 
     useEffect(() => {
         const body = document.body;
@@ -126,8 +126,8 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                             <nav className="hidden md:flex md:space-x-8">
                                 <div onMouseEnter={() => { setIsMegaMenuOpen(true); setIsExploreMenuOpen(false); }}>
                                     <button
-                                        onClick={(e) => handleNavClick(e, 'catalogue', null)}
-                                        className={`flex items-center space-x-1 text-sm font-medium uppercase tracking-wider transition-colors duration-200 ${location.pathname.startsWith('/catalogue') && !catalogueFilter ? 'text-white' : 'text-gray-300 hover:text-white'}`}>
+                                        onClick={(e) => handleNavClick(e, 'all-products', null)}
+                                        className={`flex items-center space-x-1 text-sm font-medium uppercase tracking-wider transition-colors duration-200 ${location.pathname.startsWith('/all-products') && !catalogueFilter ? 'text-white' : 'text-gray-300 hover:text-white'}`}>
                                         <span>All Products</span>
                                         <ChevronDownIcon className={`w-4 h-4 transition-transform ${isMegaMenuOpen ? 'rotate-180' : ''}`} />
                                     </button>
@@ -196,11 +196,11 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                         <div className="max-w-screen-2xl mx-auto px-8 py-6 grid grid-cols-6 gap-8">
                            {productCategories.map(group => (
                                <div key={group.groupName}>
-                                   <button onClick={(e) => handleNavClick(e, 'catalogue', group.groupName)} className="font-oswald text-sm uppercase tracking-wider text-gray-800 mb-4 hover:text-black">{group.groupName}</button>
+                                   <button onClick={(e) => handleNavClick(e, 'all-products', group.groupName)} className="font-oswald text-sm uppercase tracking-wider text-gray-800 mb-4 hover:text-black">{group.groupName}</button>
                                    <ul className="space-y-3">
                                        {group.categories.length > 0 ? group.categories.map(category => (
                                            <li key={category}>
-                                               <button onClick={(e) => handleNavClick(e, 'catalogue', category)} className={`text-sm text-gray-500 hover:text-black transition-colors ${catalogueFilter?.type === 'category' && catalogueFilter.value === category ? 'text-black font-medium' : ''}`}>
+                                               <button onClick={(e) => handleNavClick(e, 'all-products', category)} className={`text-sm text-gray-500 hover:text-black transition-colors ${catalogueFilter?.type === 'category' && catalogueFilter.value === category ? 'text-black font-medium' : ''}`}>
                                                    {category}
                                                </button>
                                            </li>
@@ -217,7 +217,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                                 <ul className="space-y-3">
                                     {['Men', 'Women', 'Unisex'].map(gender => (
                                         <li key={gender}>
-                                            <button onClick={(e) => handleNavClick(e, 'catalogue', gender)} className={`text-sm text-gray-500 hover:text-black transition-colors ${catalogueFilter?.type === 'gender' && catalogueFilter.value === gender ? 'text-black font-medium' : ''}`}>
+                                            <button onClick={(e) => handleNavClick(e, 'all-products', gender)} className={`text-sm text-gray-500 hover:text-black transition-colors ${catalogueFilter?.type === 'gender' && catalogueFilter.value === gender ? 'text-black font-medium' : ''}`}>
                                                 {gender}
                                             </button>
                                         </li>
@@ -243,7 +243,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                             </IconButton>
                         </header>
                         <nav className="flex-1 overflow-y-auto p-4 space-y-2">
-                            <button onClick={(e) => handleNavClick(e, 'catalogue', null)} className="block w-full text-left p-2 rounded-md hover:bg-gray-100 text-gray-800 font-medium">All Products</button>
+                            <button onClick={(e) => handleNavClick(e, 'all-products', null)} className="block w-full text-left p-2 rounded-md hover:bg-gray-100 text-gray-800 font-medium">All Products</button>
                              <Accordion title="Collections & Categories" theme="light">
                                 <div className="pl-4 pt-2">
                                     {productCategories.map(group => (
@@ -253,7 +253,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                                                     <ul className="pl-4 pt-2 space-y-1">
                                                         <li>
                                                             <button 
-                                                                onClick={(e) => handleNavClick(e, 'catalogue', group.groupName)} 
+                                                                onClick={(e) => handleNavClick(e, 'all-products', group.groupName)} 
                                                                 className="w-full text-left py-1.5 text-gray-600 hover:text-black font-medium text-sm">
                                                                 All {group.groupName}
                                                             </button>
@@ -261,7 +261,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                                                         {group.categories.map(category => (
                                                             <li key={category}>
                                                                 <button 
-                                                                    onClick={(e) => handleNavClick(e, 'catalogue', category)} 
+                                                                    onClick={(e) => handleNavClick(e, 'all-products', category)} 
                                                                     className="w-full text-left py-1.5 text-gray-600 hover:text-black text-sm">
                                                                     {category}
                                                                 </button>
@@ -272,7 +272,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                                             ) : (
                                                 <div className="py-2 border-b border-gray-200">
                                                     <button 
-                                                        onClick={(e) => handleNavClick(e, 'catalogue', group.groupName)}
+                                                        onClick={(e) => handleNavClick(e, 'all-products', group.groupName)}
                                                         className="w-full flex justify-between items-center text-left p-2">
                                                         <span className="uppercase tracking-wider text-sm font-semibold text-gray-800">{group.groupName}</span>
                                                     </button>
@@ -286,7 +286,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                                 <ul className="pl-4 pt-2">
                                     {['Men', 'Women', 'Unisex'].map(gender => (
                                         <li key={gender}>
-                                            <button onClick={(e) => handleNavClick(e, 'catalogue', gender)} className="block w-full text-left py-2 text-gray-700 hover:text-black">
+                                            <button onClick={(e) => handleNavClick(e, 'all-products', gender)} className="block w-full text-left py-2 text-gray-700 hover:text-black">
                                                 {gender}
                                             </button>
                                         </li>
