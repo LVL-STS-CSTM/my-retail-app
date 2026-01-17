@@ -1,22 +1,18 @@
-
 import React, { useState, useEffect } from 'react';
 import { Product, Color, ProductSize } from '../types';
 import { useData } from '../context/DataContext';
-import { CloseIcon, PlusIcon, TrashIcon, SparklesIcon } from './icons';
+import { CloseIcon, PlusIcon, TrashIcon, SparklesIcon, ChevronDownIcon } from './icons';
 import { generateProductDescription } from '../services/geminiService';
 
 const isHexColor = (hex: string): boolean => /^#?([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/i.test(hex);
 
 const getTextColorForBg = (hexColor: string): 'black' | 'white' => {
     if (!isHexColor(hexColor)) return 'black';
-
     try {
         let cleanHex = hexColor.startsWith('#') ? hexColor.slice(1) : hexColor;
-        
         if (cleanHex.length === 3) {
             cleanHex = cleanHex.split('').map(char => char + char).join('');
         }
-        
         const r = parseInt(cleanHex.substring(0, 2), 16);
         const g = parseInt(cleanHex.substring(2, 4), 16);
         const b = parseInt(cleanHex.substring(4, 6), 16);
@@ -54,6 +50,21 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
     const [idError, setIdError] = useState('');
     const [newColor, setNewColor] = useState({ name: '', hex: '#000000' });
     const [isGeneratingDesc, setIsGeneratingDesc] = useState(false);
+    
+    // Accordion State
+    const [expandedColors, setExpandedColors] = useState<Set<string>>(new Set());
+
+    const toggleColorAccordion = (colorName: string) => {
+        setExpandedColors(prev => {
+            const next = new Set(prev);
+            if (next.has(colorName)) {
+                next.delete(colorName);
+            } else {
+                next.add(colorName);
+            }
+            return next;
+        });
+    };
 
     const addProduct = (newProduct: Product) => {
         const newProducts = [...products, newProduct];
@@ -70,6 +81,8 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
                 ...emptyProduct,
                 ...productToEdit
             });
+            // Expand all sections by default when editing
+            setExpandedColors(new Set(productToEdit.availableColors.map(c => c.name)));
             setManualId('');
             setIdError('');
         } else {
@@ -78,6 +91,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
                 defaultData.categoryGroup = collections[0];
             }
             setFormData(defaultData);
+            setExpandedColors(new Set());
             setManualId('');
             setIdError('');
         }
@@ -168,9 +182,12 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
                     availableColors: [...prev.availableColors, newColor],
                 }
             });
+            // Automatically expand the newly added color
+            setExpandedColors(prev => new Set(prev).add(newColor.name));
             setNewColor({ name: '', hex: '#000000' });
         }
     };
+
     const handleRemoveColor = (colorNameToRemove: string) => {
         setFormData(prev => {
             const newImageUrls = { ...prev.imageUrls };
@@ -180,6 +197,11 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
                 imageUrls: newImageUrls,
                 availableColors: prev.availableColors.filter(c => c.name !== colorNameToRemove),
             }
+        });
+        setExpandedColors(prev => {
+            const next = new Set(prev);
+            next.delete(colorNameToRemove);
+            return next;
         });
     };
     
@@ -259,6 +281,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
                     </button>
                 </header>
                 <form onSubmit={handleSubmit} className="overflow-y-auto p-6 space-y-4">
+                    {/* Basic Info */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label htmlFor="productId" className="block text-sm font-medium text-gray-700">Product ID</label>
@@ -294,48 +317,74 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
                         </div>
                     </div>
                     
-                    <div className="p-3 border rounded-md">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Image URLs by Color</label>
+                    {/* Image URL Accordion Section */}
+                    <div className="p-3 border rounded-md bg-gray-50">
+                        <label className="block text-sm font-bold text-gray-700 mb-3 text-indigo-900">Image URLs by Color</label>
                         {formData.availableColors.length > 0 ? (
-                            <div className="space-y-4">
-                                {formData.availableColors.map(color => (
-                                    <div key={color.name}>
-                                        <h4 className="text-md font-semibold text-gray-800 mb-2">{color.name}</h4>
-                                        <div className="space-y-2">
-                                            {(formData.imageUrls[color.name] || []).map((url, index) => (
-                                                <div key={index} className="flex items-center gap-2">
-                                                    <input 
-                                                        type="url" 
-                                                        value={url} 
-                                                        onChange={(e) => handleImageUrlChange(color.name, index, e.target.value)} 
-                                                        placeholder="https://example.com/image.jpg"
-                                                        className={`flex-grow ${darkInputStyles}`}
-                                                    />
-                                                    <button 
-                                                        type="button" 
-                                                        onClick={() => handleRemoveImageUrl(color.name, index)} 
-                                                        className="px-3 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200"
-                                                    >
-                                                        <TrashIcon className="w-5 h-5"/>
-                                                    </button>
-                                                </div>
-                                            ))}
+                            <div className="space-y-2">
+                                {formData.availableColors.map(color => {
+                                    const isExpanded = expandedColors.has(color.name);
+                                    return (
+                                        <div key={color.name} className="border rounded-md bg-white overflow-hidden shadow-sm">
                                             <button
                                                 type="button"
-                                                onClick={() => handleAddImageUrl(color.name)}
-                                                className="mt-2 text-xs text-indigo-600 hover:text-indigo-900 font-medium flex items-center"
+                                                onClick={() => toggleColorAccordion(color.name)}
+                                                className="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition-colors"
                                             >
-                                                <PlusIcon className="w-4 h-4 mr-1"/> Add Image for {color.name}
+                                                <div className="flex items-center gap-3">
+                                                    <span 
+                                                        className="w-5 h-5 rounded-full border border-gray-300 shadow-inner" 
+                                                        style={{ backgroundColor: color.hex }}
+                                                    ></span>
+                                                    <span className="font-semibold text-gray-800">{color.name}</span>
+                                                    <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                                                        {(formData.imageUrls[color.name] || []).length} images
+                                                    </span>
+                                                </div>
+                                                <ChevronDownIcon 
+                                                    className={`w-5 h-5 text-gray-500 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} 
+                                                />
                                             </button>
+
+                                            {isExpanded && (
+                                                <div className="p-4 border-t bg-gray-50 space-y-3">
+                                                    {(formData.imageUrls[color.name] || []).map((url, index) => (
+                                                        <div key={index} className="flex items-center gap-2">
+                                                            <input 
+                                                                type="url" 
+                                                                value={url} 
+                                                                onChange={(e) => handleImageUrlChange(color.name, index, e.target.value)} 
+                                                                placeholder="https://example.com/image.jpg"
+                                                                className={`flex-grow ${darkInputStyles}`}
+                                                            />
+                                                            <button 
+                                                                type="button" 
+                                                                onClick={() => handleRemoveImageUrl(color.name, index)} 
+                                                                className="p-2 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors"
+                                                            >
+                                                                <TrashIcon className="w-5 h-5"/>
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleAddImageUrl(color.name)}
+                                                        className="text-xs text-indigo-600 hover:text-indigo-800 font-bold flex items-center mt-1"
+                                                    >
+                                                        <PlusIcon className="w-4 h-4 mr-1"/> Add Another Image
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         ) : (
-                            <p className="text-sm text-gray-400">Add colors below to manage images.</p>
+                            <p className="text-sm text-gray-400 italic py-2">Add colors in the section below to start uploading images.</p>
                         )}
                     </div>
 
+                    {/* AI Description */}
                     <div>
                         <div className="flex justify-between items-center">
                             <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
@@ -360,6 +409,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
                         />
                     </div>
 
+                    {/* Taxonomy and Logistics */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                             <label htmlFor="gender" className="block text-sm font-medium text-gray-700">Gender</label>
@@ -435,6 +485,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
                         </select>
                     </div>
 
+                    {/* Sizes Management */}
                     <div className="p-3 border rounded-md">
                         <label className="block text-sm font-medium text-gray-700 mb-2">Available Sizes</label>
                         <div className="space-y-2">
@@ -476,6 +527,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
                         </button>
                     </div>
 
+                    {/* Color Management */}
                     <div className="p-3 border rounded-md">
                         <label className="block text-sm font-medium text-gray-700 mb-2">Available Colors</label>
                         <div className="flex gap-2 mb-2 items-center">
@@ -500,19 +552,20 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
                                 }}
                             />
                              <input type="color" value={newColor.hex} onChange={e => setNewColor(c => ({...c, hex: e.target.value}))} className="w-9 h-9 p-0 border-none rounded-md cursor-pointer" />
-                            <button type="button" onClick={handleAddColor} className="px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300"><PlusIcon className="w-5 h-5"/></button>
+                            <button type="button" onClick={handleAddColor} className="px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"><PlusIcon className="w-5 h-5"/></button>
                         </div>
                          <div className="flex flex-wrap gap-2">
                             {formData.availableColors.map(color => (
-                                <span key={color.name} className="flex items-center bg-gray-100 text-gray-800 text-xs font-medium pl-1 pr-2 py-1 rounded-full">
+                                <span key={color.name} className="flex items-center bg-gray-100 text-gray-800 text-xs font-medium pl-1 pr-2 py-1 rounded-full border border-gray-200 shadow-sm">
                                     <span style={{backgroundColor: color.hex}} className="w-4 h-4 rounded-full mr-1.5 border border-gray-300"></span>
                                     {color.name}
-                                    <button type="button" onClick={() => handleRemoveColor(color.name)} className="ml-1.5"><CloseIcon className="w-3 h-3"/></button>
+                                    <button type="button" onClick={() => handleRemoveColor(color.name)} className="ml-1.5 hover:text-red-600 transition-colors"><CloseIcon className="w-3 h-3"/></button>
                                 </span>
                             ))}
                         </div>
                     </div>
 
+                    {/* Bestseller Toggle */}
                     <div className="flex items-start">
                         <div className="flex items-center h-5">
                             <input
@@ -530,11 +583,12 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
                         </div>
                     </div>
 
+                    {/* Sticky Footer */}
                     <footer className="py-4 flex justify-end space-x-3 sticky bottom-0 bg-white z-10 border-t mt-4 -mx-6 px-6">
-                        <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">
+                        <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors">
                             Cancel
                         </button>
-                        <button type="submit" className="px-6 py-2 bg-[#3A3A3A] text-white rounded-md hover:bg-[#4f4f4f]">
+                        <button type="submit" className="px-6 py-2 bg-[#3A3A3A] text-white rounded-md hover:bg-[#4f4f4f] transition-colors shadow-md">
                             Save Product
                         </button>
                     </footer>
