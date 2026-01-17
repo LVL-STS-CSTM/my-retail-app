@@ -223,7 +223,7 @@ const AppContent: React.FC = () => {
         return <CataloguePage products={allProducts} onProductClick={handleProductClick} initialFilter={initialFilter} />;
     };
     
-    const mainContentClass = \`transition-opacity duration-500 \${isAppLoading ? 'opacity-0' : 'opacity-100'} \${location.pathname !== '/' ? 'pt-14' : ''}\`;
+    const mainContentClass = `transition-opacity duration-500 ${isAppLoading ? 'opacity-0' : 'opacity-100'} ${location.pathname !== '/' ? 'pt-14' : ''}`;
     
     return (
         <div className="font-sans">
