@@ -161,11 +161,22 @@ const AppContent: React.FC = () => {
         }
     };
 
-    const handleProductClick = (product: Product) => {
+    const handleProductClick = (product: Product, selectedColor?: string) => {
         if (product && product.categoryGroup && product.id) {
             const groupSlug = toSlug(product.categoryGroup);
-            navigate(`/${groupSlug}/${product.id}`);
+            let path = `/${groupSlug}/${product.id}`;
+            if (selectedColor) {
+                path += `?color=${encodeURIComponent(selectedColor)}`;
+            }
+            navigate(path);
         }
+    };
+
+    const handleColorChange = (color: string) => {
+        const { search, pathname } = location;
+        const params = new URLSearchParams(search);
+        params.set('color', color);
+        navigate(`${pathname}?${params.toString()}`, { replace: true });
     };
 
     const handlePasswordSubmit = async (password: string, username: string) => {
@@ -196,8 +207,12 @@ const AppContent: React.FC = () => {
 
     const ProductPageRoute: React.FC = () => {
         const { collection: collectionSlug, productId } = useParams<{ collection: string; productId: string }>();
+        const { search } = useLocation();
+        const params = new URLSearchParams(search);
+        const initialColor = params.get('color');
+
         const selectedProduct = allProducts.find(p => p.id === productId);
-        return selectedProduct ? <ProductPage product={selectedProduct} onNavigate={(path) => handleNavigate(path)} showToast={setToastMessage} materials={materials} allProducts={allProducts} onProductClick={handleProductClick} /> : <div className="text-center py-20">Product not found.</div>;
+        return selectedProduct ? <ProductPage product={selectedProduct} initialColor={initialColor || undefined} onColorChange={handleColorChange} onNavigate={(path) => handleNavigate(path)} showToast={setToastMessage} materials={materials} allProducts={allProducts} onProductClick={handleProductClick} /> : <div className="text-center py-20">Product not found.</div>;
     };
 
     const CataloguePageRoute: React.FC = () => {

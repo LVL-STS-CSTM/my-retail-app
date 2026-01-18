@@ -1,9 +1,5 @@
 import { createClient } from '@vercel/kv';
 
-// This is a Vercel Serverless Function
-// It's a dynamic route that handles /api/data/[key]
-// e.g., /api/data/products, /api/data/heroContents
-
 export const config = {
   runtime: 'edge',
 };

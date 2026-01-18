@@ -40,7 +40,10 @@ export interface ProductSize {
  * @property {number} displayOrder - The order in which the product should be displayed.
  * @property {string} [materialId] - Optional ID to link to a specific material technology.
  * @property {number} [moq] - Optional per-product Minimum Order Quantity.
- * @property {number} [price] - Optional price for sorting purposes.
+ * @property {number} price - Optional price for sorting purposes.
+ * @property {string[]} colors - An array of available color names.
+ * @property {string[]} [tags] - Optional tags for filtering.
+ * @property {any} [details] - Optional additional product details.
  */
 export interface Product {
     id: string;
@@ -57,7 +60,10 @@ export interface Product {
     displayOrder: number;
     materialId?: string;
     moq?: number;
-    price?: number;
+    price: number;
+    colors: string[];
+    tags?: string[];
+    details?: any;
     // FIX: Added missing properties for the Mockup Generator feature
     mockupImageUrl?: string;
     mockupArea?: { top: number; left: number; width: number; height: number };

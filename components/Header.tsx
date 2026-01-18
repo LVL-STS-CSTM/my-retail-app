@@ -51,7 +51,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
     const isTransparent = !isScrolled;
     const headerClasses = isTransparent
         ? 'bg-transparent text-white'
-        : 'bg-gray-800 bg-opacity-90 backdrop-blur-lg shadow-lg text-white';
+        : isTransparent ? 'bg-transparent' : 'bg-[#3A3A3A] shadow-lg';
 
     const productCategories = useMemo(() => {
         return collections.map(groupName => {
@@ -243,7 +243,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onQuoteClick, onSearchClick
                             </IconButton>
                         </header>
                         <nav className="flex-1 overflow-y-auto p-4 space-y-2">
-                            <button onClick={(e) => handleNavClick(e, 'all-products', null)} className="block w-full text-left p-2 rounded-md hover:bg-gray-100 text-gray-800 font-medium">All Products</button>
+                            <button onClick={(e) => handleNavClick(e, 'all-products', null)} className="block w-full text-left p-2 rounded-md hover:bg-gray-800 text-gray-800 font-medium">All Products</button>
                              <Accordion title="Collections & Categories" theme="light">
                                 <div className="pl-4 pt-2">
                                     {productCategories.map(group => (
