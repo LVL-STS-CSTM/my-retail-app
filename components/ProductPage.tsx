@@ -1,147 +1,315 @@
 
-import React, { useState, useEffect } from 'react';
-import { Product, Material, Color } from '../types';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Product, Material, Color, ProductSize, View } from '../types';
 import ProductGrid from './ProductGrid';
+import { useQuote } from '../context/CartContext';
+import MaterialCareModal from './MaterialCareModal';
 
 interface ProductPageProps {
     product: Product;
-    initialColor?: string;
-    onColorChange: (color: string) => void;
-    onNavigate: (path: string) => void;
+    onNavigate: (page: View, path?: string) => void;
     showToast: (message: string) => void;
     materials: Material[];
     allProducts: Product[];
-    onProductClick: (product: Product) => void;
+    onProductClick: (product: Product, colorSlug?: string) => void;
+    initialColorSlug?: string;
 }
 
-const ProductPage: React.FC<ProductPageProps> = ({ product, initialColor, onColorChange, onNavigate, showToast, materials, allProducts, onProductClick }) => {
-    const getInitialColor = (): Color => {
-        if (initialColor) {
-            const foundColor = product.availableColors.find(c => c.name.toLowerCase() === initialColor.toLowerCase());
-            if (foundColor) return foundColor;
+// Helper to convert a string to a URL-friendly slug
+const toSlug = (str: string) => str.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
+
+const FileInput: React.FC<{label: string, file: File | null, setFile: (file: File | null) => void, accept: string}> = ({ label, file, setFile, accept }) => (
+    <div>
+        <label className="block text-sm font-medium text-gray-700">{label}</label>
+        <div className="mt-1 flex items-center justify-between p-2 border border-gray-300 rounded-md bg-gray-50">
+           <span className="text-sm text-gray-600 truncate pr-2">{file ? file.name : 'No file selected.'}</span>
+           <div className="flex items-center">
+                {file && (
+                    <button type="button" onClick={() => setFile(null)} className="text-xs text-red-500 hover:underline mr-2">
+                        Remove
+                    </button>
+                )}
+                <label className="cursor-pointer text-sm font-medium text-indigo-600 hover:text-indigo-500 bg-white rounded-md px-3 py-1 border border-gray-300 hover:bg-gray-50 shadow-sm">
+                    <span>Upload</span>
+                    <input type='file' className="sr-only" accept={accept} onChange={e => setFile(e.target.files ? e.target.files[0] : null)} />
+                </label>
+           </div>
+        </div>
+    </div>
+);
+
+const ProductPage: React.FC<ProductPageProps> = ({ 
+    product,
+    onNavigate, 
+    showToast, 
+    materials, 
+    allProducts, 
+    onProductClick, 
+    initialColorSlug 
+}) => {
+    const initialColor = useMemo(() => {
+        if (!product) return null;
+        if (initialColorSlug) {
+            return product.availableColors.find(c => toSlug(c.name) === initialColorSlug) || product.availableColors[0] || null;
         }
-        return product.availableColors.length > 0 ? product.availableColors[0] : { name: 'default', hex: '#FFFFFF' };
+        return product.availableColors[0] || null;
+    }, [product, initialColorSlug]);
+
+    const [selectedColor, setSelectedColor] = useState<Color | null>(initialColor);
+    const [sizeQuantities, setSizeQuantities] = useState<{ [key: string]: number }>({});
+    const [logoFile, setLogoFile] = useState<File | null>(null);
+    const [designFile, setDesignFile] = useState<File | null>(null);
+    const [customizations, setCustomizations] = useState<{ name: string; number: string; size: string }[]>([{ name: '', number: '', size: '' }]);
+    
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    
+    const [isCareModalOpen, setIsCareModalOpen] = useState(false);
+    const [selectedCareImage, setSelectedCareImage] = useState<string | undefined>(undefined);
+
+    const imagesForDisplay = useMemo(() => {
+        if (!product) return [];
+        if (selectedColor && product.imageUrls[selectedColor.name] && product.imageUrls[selectedColor.name].length > 0) {
+            return product.imageUrls[selectedColor.name];
+        }
+        const firstColorWithImages = product.availableColors.find(c => product.imageUrls[c.name]?.length > 0);
+        if (firstColorWithImages) {
+            return product.imageUrls[firstColorWithImages.name];
+        }
+        return Object.values(product.imageUrls).flat();
+    }, [selectedColor, product]);
+
+    const [activeImageUrl, setActiveImageUrl] = useState<string>('');
+
+    const { addToQuote } = useQuote();
+    
+    const material = useMemo(() => {
+        if (!product?.materialId || !materials) return null;
+        return materials.find(m => m.id === product.materialId);
+    }, [product, materials]);
+
+    const hasSizeChart = useMemo(() => {
+        if (!product) return false;
+        return product.availableSizes && product.availableSizes.length > 0 && product.availableSizes.some(s => s.width > 0 && s.length > 0);
+    }, [product]);
+
+    const MOQ = useMemo(() => {
+        if (!product) return 12;
+        return product.moq && product.moq > 0 
+            ? product.moq 
+            : (product.category === 'Custom Jerseys' ? 1 : 12);
+    }, [product]);
+
+    const relatedProducts = useMemo(() => {
+        if (!allProducts || !product) return [];
+        return allProducts
+            .filter(p => p.categoryGroup === product.categoryGroup && p.id !== product.id)
+            .sort(() => 0.5 - Math.random())
+            .slice(0, 4);
+    }, [allProducts, product]);
+
+    const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+        e.currentTarget.src = 'https://placehold.co/600x800/f1f5f9/94a3b8?text=Image+Error';
+        e.currentTarget.onerror = null;
     };
 
-    const [selectedColor, setSelectedColor] = useState<Color>(getInitialColor());
-    const [selectedImage, setSelectedImage] = useState(0);
+    const totalQuantity = useMemo(() => {
+        return Object.values(sizeQuantities).reduce((sum: number, qty: number) => sum + (qty || 0), 0);
+    }, [sizeQuantities]);
+
+    const sortedSizes = useMemo(() => {
+        if (!product) return [];
+        const sizeOrder = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+        return [...product.availableSizes].sort((a, b) => {
+            const aIsNumeric = /^\d+$/.test(a.name);
+            const bIsNumeric = /^\d+$/.test(b.name);
+            if (aIsNumeric && bIsNumeric) return parseInt(a.name, 10) - parseInt(b.name, 10);
+            const aIndex = sizeOrder.indexOf(a.name.toUpperCase());
+            const bIndex = sizeOrder.indexOf(b.name.toUpperCase());
+            if (aIndex > -1 && bIndex > -1) return aIndex - bIndex;
+            if(aIsNumeric) return -1;
+            if(bIsNumeric) return 1;
+            if(aIndex > -1) return -1;
+            if(bIndex > -1) return 1;
+            return a.name.localeCompare(b.name);
+        });
+    }, [product]);
     
+    const sizesWithQuantity = useMemo(() => sortedSizes.filter((size: ProductSize) => (sizeQuantities[size.name] || 0) > 0), [sortedSizes, sizeQuantities]);
+    const customizationCountsPerSize = useMemo(() => {
+        const counts: { [key: string]: number } = {};
+        for (const cust of customizations) {
+            if (cust.size) counts[cust.size] = (counts[cust.size] || 0) + 1;
+        }
+        return counts;
+    }, [customizations]);
+
     useEffect(() => {
-        if (initialColor && initialColor.toLowerCase() !== selectedColor.name.toLowerCase()) {
-            const foundColor = product.availableColors.find(c => c.name.toLowerCase() === initialColor.toLowerCase());
-            if (foundColor) {
-                setSelectedColor(foundColor);
+        const initialColor = product.availableColors.find(c => toSlug(c.name) === initialColorSlug) || product.availableColors[0] || null;
+        setSelectedColor(initialColor);
+        setCustomizations([{ name: '', number: '', size: '' }]);
+        setSizeQuantities({});
+    }, [product, initialColorSlug]);
+
+    useEffect(() => {
+        if (imagesForDisplay.length > 0) {
+            setActiveImageUrl(imagesForDisplay[currentImageIndex] || imagesForDisplay[0]);
+        } else {
+            setActiveImageUrl('https://placehold.co/600x800/f1f5f9/94a3b8?text=No+Image');
+        }
+    }, [imagesForDisplay, currentImageIndex]);
+
+    const handleScroll = () => {
+        if (scrollContainerRef.current) {
+            const { scrollLeft, offsetWidth } = scrollContainerRef.current;
+            const index = Math.round(scrollLeft / offsetWidth);
+            if (index !== currentImageIndex) {
+                setCurrentImageIndex(index);
+                setActiveImageUrl(imagesForDisplay[index]);
             }
         }
-    }, [initialColor, product.availableColors, selectedColor.name]);
+    };
     
+    const openCareModal = (imageUrl?: string) => {
+        setSelectedCareImage(imageUrl);
+        setIsCareModalOpen(true);
+    };
+    
+    const closeCareModal = () => {
+        setIsCareModalOpen(false);
+        setSelectedCareImage(undefined);
+    };
+
+    const handleSizeQuantityChange = (sizeName: string, value: string) => {
+        const quantity = parseInt(value, 10);
+        setSizeQuantities(prev => ({ ...prev, [sizeName]: isNaN(quantity) || quantity < 0 ? 0 : quantity }));
+    };
+
+    const handleCustomizationChange = (index: number, field: 'name' | 'number' | 'size', value: string) => {
+        const newCustomizations = [...customizations];
+        const currentCust = newCustomizations[index];
+        if (field === 'name') currentCust.name = value.toUpperCase();
+        else if (field === 'number') { const val = value.replace(/[^0-9]/g, ''); if (val.length <= 2) currentCust.number = val; } 
+        else currentCust.size = value;
+        setCustomizations(newCustomizations);
+    };
+
+    const handleAddCustomization = () => setCustomizations(prev => [...prev, { name: '', number: '', size: '' }]);
+    const handleRemoveCustomization = (index: number) => setCustomizations(prev => prev.filter((_, i) => i !== index));
+
+    const handleAddToQuote = () => {
+        if (!product || !selectedColor) return;
+        const isCustomJersey = product.category === 'Custom Jerseys';
+        if (totalQuantity === 0) { alert('Please enter a quantity for at least one size.'); return; }
+
+        if (totalQuantity < MOQ) {
+            alert(`A minimum order quantity of ${MOQ} is required for this item.`);
+            return;
+        }
+        
+        if (isCustomJersey) {
+            const filledCustomizations = customizations.filter(c => c.name.trim() || c.number.trim() || c.size);
+            if (filledCustomizations.some(c => (c.name.trim() || c.number.trim()) && !c.size)) { alert('Please select a size for every customization row that has a name or number.'); return; }
+            const finalCustomizationCounts: { [key: string]: number } = {};
+            for (const cust of filledCustomizations) { if (cust.size) finalCustomizationCounts[cust.size] = (finalCustomizationCounts[cust.size] || 0) + 1; }
+            for (const size of sortedSizes) {
+                const needed = sizeQuantities[size.name] || 0; const entered = finalCustomizationCounts[size.name] || 0;
+                if (needed !== entered) { alert(`Mismatch for size ${size.name}: Quantity is ${needed}, but you have provided ${entered} customization(s).`); return; }
+            }
+            for (const size in finalCustomizationCounts) { if (!sizeQuantities[size] || sizeQuantities[size] === 0) { alert(`You have provided customizations for size ${size}, but the quantity for this size is 0.`); return; } }
+        }
+        
+        const finalSizeQuantities = Object.entries(sizeQuantities).reduce((acc: Record<string, number>, [size, qty]: [string, number]) => { if (qty > 0) { acc[size] = qty; } return acc; }, {});
+        if (Object.keys(finalSizeQuantities).length === 0) return;
+        const finalCustomizations = isCustomJersey ? customizations.filter(c => c.size && (c.name.trim() || c.number.trim())) : undefined;
+        addToQuote(product, selectedColor, finalSizeQuantities, logoFile || undefined, designFile || undefined, finalCustomizations);
+        showToast("Item added to quote!");
+        setSizeQuantities({}); setLogoFile(null); setDesignFile(null); setCustomizations([{ name: '', number: '', size: '' }]);
+    };
+
     const handleColorSelect = (color: Color) => {
         setSelectedColor(color);
-        setSelectedImage(0); 
-        onColorChange(color.name);
+        onProductClick(product, toSlug(color.name));
     };
-
-    const currentImages = product.imageUrls[selectedColor.name] || [];
-
-    const relatedProducts = allProducts.filter(p => 
-        p.id !== product.id && 
-        (p.categoryGroup === product.categoryGroup || p.tags?.some((t: string) => product.tags?.includes(t)))
-    ).slice(0, 4);
-
-    const getMaterialInfo = (materialId?: string) => {
-        if (!materialId) return null;
-        return materials.find(m => m.id === materialId);
-    };
-
-    const material = getMaterialInfo(product.materialId);
     
-    return (
-        <div className="bg-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                    {/* Image gallery */}
-                    <div>
-                        <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-lg bg-gray-200">
-                            {currentImages.length > 0 ? (
-                                <img src={currentImages[selectedImage]} alt={`${product.name} in ${selectedColor.name}`} className="w-full h-full object-center object-cover" />
-                            ) : (
-                                <div className="w-full h-full bg-gray-300 flex items-center justify-center"><span className="text-gray-500">Image not available</span></div>
-                            )}
-                        </div>
-                        {currentImages.length > 1 && (
-                            <div className="mt-2 grid grid-cols-5 gap-2">
-                                {currentImages.map((img, index) => (
-                                    <button key={index} onClick={() => setSelectedImage(index)} className={`block h-16 w-full rounded-md overflow-hidden focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${selectedImage === index ? 'ring-2 ring-indigo-500' : ''}`}>
-                                        <img src={img} alt={`${product.name} thumbnail ${index + 1}`} className="w-full h-full object-center object-cover" />
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+    const ColorSwatch: React.FC<{ color: Color }> = ({ color }) => {
+        if (!product) return null;
+        const imageUrl = (product.imageUrls[color.name] && product.imageUrls[color.name][0]) || 'https://placehold.co/80x80/f1f5f9/94a3b8?text=N/A';
+        const isSelected = selectedColor?.name === color.name;
+        
+        return (
+            <button
+                key={color.name}
+                onClick={() => handleColorSelect(color)}
+                className={`relative w-20 h-20 rounded-md border-2 overflow-hidden transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black ${isSelected ? 'border-black' : 'border-gray-200 hover:border-gray-400'}`}
+                aria-label={`Select color ${color.name}`}
+            >
+                <img
+                    src={imageUrl}
+                    alt={color.name}
+                    className="w-full h-full object-cover"
+                    onError={handleImageError}
+                />
+            </button>
+        )
+    };
 
-                    {/* Product info */}
-                    <div className="flex flex-col justify-between">
-                        <div>
-                            <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">{product.name}</h1>
-                            <p className="text-3xl text-gray-900 mt-2">${product.price.toFixed(2)}</p>
-                            <div className="mt-6">
-                                <h3 className="text-sm text-gray-900 font-medium">Color</h3>
-                                <div className="flex items-center space-x-3 mt-2">
-                                    {product.availableColors.map(color => (
-                                        <button 
-                                            key={color.name} 
-                                            onClick={() => handleColorSelect(color)} 
-                                            className={`h-8 w-8 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${selectedColor.name === color.name ? 'ring-2 ring-indigo-500' : ''}`}
-                                            style={{ backgroundColor: color.hex }}
-                                            title={color.name}
-                                        >
-                                            <span className="sr-only">{color.name}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="mt-8">
-                                <p className="text-base text-gray-700">{product.description}</p>
-                            </div>
-                            <div className="mt-8">
+    if (!product) {
+        return (
+            <div className="text-center py-20">
+                <h2 className="text-2xl font-bold">Product Not Found</h2>
+                <p className="text-gray-600 mt-2">The product you're looking for doesn't exist.</p>
+                <button onClick={() => onNavigate('catalogue')} className="mt-6 text-sm font-semibold text-indigo-600 hover:text-indigo-800">
+                    &larr; Back to Catalogue
+                </button>
+            </div>
+        );
+    }
+
+    return (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <button onClick={() => onNavigate('catalogue', product.categoryGroup)} className="text-sm text-gray-600 hover:text-black mb-8">
+                &larr; Back to {product.categoryGroup}
+            </button>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                {/* --- LEFT: Image Gallery --- */}
+                <div className="lg:sticky lg:top-24 h-fit">
+                    <div className="flex flex-col md:flex-row gap-4">
+                        {/* Thumbnails (Desktop Only) */}
+                        <div className="hidden md:flex flex-col gap-3">
+                            {imagesForDisplay.map((url, index) => (
                                 <button
-                                    type="button"
-                                    className="w-full bg-indigo-600 border border-transparent rounded-md py-3 px-8 flex items-center justify-center text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                                    onClick={() => {
-                                        showToast('Added to quote!');
-                                    }}
+                                    key={index}
+                                    onClick={() => setActiveImageUrl(url)}
+                                    className={`w-20 h-20 flex-shrink-0 cursor-pointer rounded-md border-2 overflow-hidden transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black ${activeImageUrl === url ? 'border-transparent ring-2 ring-black ring-offset-1' : 'border-gray-200 hover:border-gray-400'}`}
                                 >
-                                    Add to Quote
+                                    <img
+                                        src={url}
+                                        alt={`${product.name} thumbnail ${index + 1}`}
+                                        className="w-full h-full object-cover"
+                                        onError={handleImageError}
+                                    />
                                 </button>
-                            </div>
-                        </div>
-                        
-                        <div className="mt-10">
-                            <div>
-                                <h3 className="text-lg font-medium text-gray-900">Details</h3>
-                                <div className="mt-2 text-base text-gray-700">
-                                    {product.details ? <p>{JSON.stringify(product.details)}</p> : <p>No details available.</p>}
-                                </div>
-                            </div>
-                            {material && (
-                                <div className="mt-4">
-                                    <h3 className="text-lg font-medium text-gray-900">Fabric & Care</h3>
-                                    <div className="mt-2 text-base text-gray-700">
-                                        <p>{material.description}</p>
-                                    </div>
-                                </div>
-                            )}
+                            ))}
                         </div>
                     </div>
                 </div>
-
-                {relatedProducts.length > 0 && (
-                    <div className="mt-20">
-                        <h2 className="text-2xl font-bold tracking-tight text-gray-900">You might also like</h2>
-                        <ProductGrid products={relatedProducts} onProductClick={onProductClick} />
-                    </div>
-                )}
             </div>
+
+            {relatedProducts.length > 0 && (
+                <div className="mt-20 pt-16 border-t border-gray-200">
+                    <h2 className="font-oswald text-2xl md:text-3xl text-center mb-8 uppercase tracking-wider text-gray-900">
+                        You May Also Like
+                    </h2>
+                    <ProductGrid products={relatedProducts} onProductClick={(p) => onProductClick(p)} />
+                </div>
+            )}
+
+            <MaterialCareModal 
+                isOpen={isCareModalOpen}
+                onClose={closeCareModal}
+                imageUrl={selectedCareImage}
+            />
         </div>
     );
 };

@@ -55,7 +55,7 @@ const HomePage: React.FC<{
     platformRatings: PlatformRating[];
     partners: any[];
     onNavigate: (path: string) => void;
-    onProductClick: (product: Product) => void;
+    onProductClick: (product: Product, colorSlug?: string) => void;
     onCardClick: (card: InfoCard) => void;
 }> = ({ heroContents, allProducts, infoCards, featuredVideoContent, brandReviews, platformRatings, partners, onNavigate, onProductClick, onCardClick }) => {
     const homeHero = heroContents.find(h => h.displayOrder === 0);
@@ -161,12 +161,12 @@ const AppContent: React.FC = () => {
         }
     };
 
-    const handleProductClick = (product: Product, selectedColor?: string) => {
+    const handleProductClick = (product: Product, colorSlug?: string) => {
         if (product && product.categoryGroup && product.id) {
             const groupSlug = toSlug(product.categoryGroup);
             let path = `/${groupSlug}/${product.id}`;
-            if (selectedColor) {
-                path += `?color=${encodeURIComponent(selectedColor)}`;
+            if (colorSlug) {
+                path += `/${colorSlug}`;
             }
             navigate(path);
         }
@@ -206,13 +206,9 @@ const AppContent: React.FC = () => {
     };
 
     const ProductPageRoute: React.FC = () => {
-        const { collection: collectionSlug, productId } = useParams<{ collection: string; productId: string }>();
-        const { search } = useLocation();
-        const params = new URLSearchParams(search);
-        const initialColor = params.get('color');
-
+        const { collection: collectionSlug, productId, colorSlug } = useParams<{ collection: string; productId: string; colorSlug?: string }>();
         const selectedProduct = allProducts.find(p => p.id === productId);
-        return selectedProduct ? <ProductPage product={selectedProduct} initialColor={initialColor || undefined} onColorChange={handleColorChange} onNavigate={(path) => handleNavigate(path)} showToast={setToastMessage} materials={materials} allProducts={allProducts} onProductClick={handleProductClick} /> : <div className="text-center py-20">Product not found.</div>;
+        return selectedProduct ? <ProductPage product={selectedProduct} onNavigate={(path) => handleNavigate(path)} showToast={setToastMessage} materials={materials} allProducts={allProducts} onProductClick={handleProductClick} initialColorSlug={colorSlug} /> : <div className="text-center py-20">Product not found.</div>;
     };
 
     const CataloguePageRoute: React.FC = () => {
@@ -235,7 +231,7 @@ const AppContent: React.FC = () => {
             }
         }
 
-        return <CataloguePage products={allProducts} onProductClick={handleProductClick} initialFilter={initialFilter} />;
+        return <CataloguePage products={allProducts} onProductClick={handleProductClick} initialFilter={initialFilter} onNavigate={handleNavigate} toSlug={toSlug} />;
     };
     
     const mainContentClass = `transition-opacity duration-500 ${isAppLoading ? 'opacity-0' : 'opacity-100'} ${location.pathname !== '/' ? 'pt-14' : ''}`;
@@ -252,6 +248,7 @@ const AppContent: React.FC = () => {
                     <Route path="/catalogue" element={<CataloguePageRoute />} />
                     <Route path="/:collection" element={<CataloguePageRoute />} />
                     <Route path="/:collection/:productId" element={<ProductPageRoute />} />
+                    <Route path="/:collection/:productId/:colorSlug" element={<ProductPageRoute />} />
                     <Route path="/about" element={<AboutPage onNavigate={(path) => handleNavigate(path)} />} />
                     <Route path="/partners" element={<PartnersPage onNavigate={(path) => handleNavigate(path)} />} />
                     <Route path="/contact" element={<ContactPage showToast={setToastMessage} />} />
