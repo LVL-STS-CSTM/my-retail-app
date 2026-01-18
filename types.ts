@@ -4,10 +4,12 @@
  * @description Represents a color option for a product.
  * @property {string} name - The user-facing name of the color (e.g., "Navy").
  * @property {string} hex - The hexadecimal code for the color (e.g., "#000080").
+ * @property {string} urlSlug - The URL-friendly version of the color name (e.g., "navy").
  */
 export interface Color {
     name: string;
     hex: string;
+    urlSlug: string;
 }
 
 /**
@@ -28,6 +30,7 @@ export interface ProductSize {
  * @description Represents a single product in the catalogue.
  * @property {string} id - A unique identifier for the product.
  * @property {string} name - The display name of the product.
+ * @property {string} urlSlug - The URL-friendly version of the product name (e.g., "heavyweight-hoodie").
  * @property {{ [colorName: string]: string[] }} imageUrls - A dictionary of image URLs, keyed by color name.
  * @property {string} url - A placeholder for a direct product link (not currently used).
  * @property {boolean} isBestseller - Flag to identify featured products.
@@ -45,6 +48,7 @@ export interface ProductSize {
 export interface Product {
     id: string;
     name: string;
+    urlSlug: string;
     imageUrls: { [colorName: string]: string[] };
     url: string;
     isBestseller: boolean;
