@@ -1,6 +1,6 @@
 
 // functions/api/gemini.ts
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, Content, Part } from "@google/generative-ai";
 
 // This is a Vercel Edge Function
 export const config = {
@@ -61,11 +61,13 @@ ${JSON.stringify(products, null, 2)}`,
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-    const chat = model.startChat({
-      history: history.map((msg: { role: string; parts: { text: string }[] }) => ({
+    const chatHistory: Content[] = history.map((msg: { role: string; parts: { text: string }[] }) => ({
         role: msg.role,
-        parts: msg.parts.map(part => part.text),
-      })),
+        parts: msg.parts.map(part => ({ text: part.text })),
+    }));
+
+    const chat = model.startChat({
+      history: chatHistory,
       generationConfig: {
         maxOutputTokens: 1000,
         temperature: 0.7,

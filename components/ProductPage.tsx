@@ -266,6 +266,8 @@ const ProductPage: React.FC<ProductPageProps> = ({
         );
     }
 
+    const isCustomJersey = product.category === 'Custom Jerseys';
+
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <button onClick={() => onNavigate('catalogue', product.categoryGroup)} className="text-sm text-gray-600 hover:text-black mb-8">
@@ -292,6 +294,200 @@ const ProductPage: React.FC<ProductPageProps> = ({
                                 </button>
                             ))}
                         </div>
+                        
+                        {/* Main Image Viewport */}
+                        <div className="relative flex-grow aspect-[3/4] rounded-xl overflow-hidden bg-gray-100 shadow-inner group">
+                            <div 
+                                ref={scrollContainerRef}
+                                onScroll={handleScroll}
+                                className="flex h-full w-full overflow-x-auto snap-x snap-mandatory scrollbar-hide md:overflow-hidden"
+                            >
+                                {imagesForDisplay.map((url, index) => (
+                                    <div key={index} className="flex-shrink-0 w-full h-full snap-center">
+                                        <img
+                                            src={url}
+                                            alt={`${product.name} ${index + 1}`}
+                                            className="w-full h-full object-cover"
+                                            onError={handleImageError}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            {/* Mobile Pagination Dots */}
+                            {imagesForDisplay.length > 1 && (
+                                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 md:hidden">
+                                    {imagesForDisplay.map((_, i) => (
+                                        <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === currentImageIndex ? 'w-4 bg-black' : 'w-1.5 bg-black/30'}`} />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* --- RIGHT: Product Details & Configurator --- */}
+                <div className="space-y-10">
+                    {/* Header Info */}
+                    <div>
+                        <div className="flex justify-between items-start gap-4">
+                            <div>
+                                <h1 className="font-oswald text-4xl uppercase tracking-wider text-gray-900 leading-none">{product.name}</h1>
+                                <p className="mt-2 text-sm text-gray-500 uppercase tracking-widest">{product.category} • {product.gender}</p>
+                            </div>
+                        </div>
+                        <p className="mt-6 text-gray-700 leading-relaxed text-lg">
+                            {product.description}
+                        </p>
+                    </div>
+
+                    {/* Color Selection */}
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-end">
+                            <h3 className="text-sm font-bold uppercase tracking-widest text-gray-900">1. Select Color</h3>
+                            <span className="text-xs font-medium text-gray-500">{selectedColor?.name || 'Please select'}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-3">
+                            {product.availableColors.map(color => (
+                                <ColorSwatch key={color.name} color={color} />
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Size & Quantity Selection */}
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-end">
+                            <h3 className="text-sm font-bold uppercase tracking-widest text-gray-900">2. Enter Quantities</h3>
+                            {hasSizeChart && (
+                                <button className="text-xs font-bold text-indigo-600 hover:underline">
+                                    View Size Chart
+                                </button>
+                            )}
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-5 bg-gray-50 rounded-xl border border-gray-100">
+                            {sortedSizes.map((size) => (
+                                <div key={size.name} className="flex flex-col items-center gap-1.5">
+                                    <label className="text-xs font-bold text-gray-500">{size.name}</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={sizeQuantities[size.name] || ''}
+                                        onChange={(e) => handleSizeQuantityChange(size.name, e.target.value)}
+                                        placeholder="0"
+                                        className="w-full h-10 text-center border-gray-300 rounded-lg focus:ring-black focus:border-black transition-all"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-500 italic">Minimum order: {MOQ} units</span>
+                            <span className={`font-bold ${totalQuantity >= MOQ ? 'text-green-600' : 'text-gray-400'}`}>
+                                Total: {totalQuantity} Units
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* File Uploads */}
+                    <div className="space-y-4">
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-gray-900">3. Artwork & Details</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <FileInput label="Upload Logo" file={logoFile} setFile={setLogoFile} accept="image/*,.ai,.eps,.pdf" />
+                            <FileInput label="Reference Image" file={designFile} setFile={setDesignFile} accept="image/*,.pdf" />
+                        </div>
+                    </div>
+
+                    {/* Custom Jersey Features */}
+                    {isCustomJersey && (
+                        <div className="space-y-4 p-6 bg-indigo-50/50 rounded-xl border border-indigo-100 animate-fade-in">
+                            <div className="flex justify-between items-center">
+                                <h3 className="text-sm font-bold uppercase tracking-widest text-indigo-900">4. Names & Numbers</h3>
+                                <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full uppercase">Jersey Features</span>
+                            </div>
+                            
+                            <div className="space-y-2">
+                                {customizations.map((cust, idx) => (
+                                    <div key={idx} className="flex gap-2 items-center">
+                                        <input
+                                            type="text"
+                                            placeholder="NAME"
+                                            value={cust.name}
+                                            onChange={(e) => handleCustomizationChange(idx, 'name', e.target.value)}
+                                            className="flex-grow h-9 text-xs border-indigo-200 rounded-md uppercase placeholder:text-indigo-300 focus:ring-indigo-500 focus:border-indigo-500"
+                                        />
+                                        <input
+                                            type="text"
+                                            placeholder="#"
+                                            value={cust.number}
+                                            onChange={(e) => handleCustomizationChange(idx, 'number', e.target.value)}
+                                            className="w-14 h-9 text-xs text-center border-indigo-200 rounded-md placeholder:text-indigo-300 focus:ring-indigo-500 focus:border-indigo-500"
+                                        />
+                                        <select
+                                            value={cust.size}
+                                            onChange={(e) => handleCustomizationChange(idx, 'size', e.target.value)}
+                                            className="w-20 h-9 text-xs border-indigo-200 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                                        >
+                                            <option value="">SIZE</option>
+                                            {sizesWithQuantity.map(s => <option key={s.name} value={s.name}>{s.name}</option>)}
+                                        </select>
+                                        <button onClick={() => handleRemoveCustomization(idx)} className="p-2 text-indigo-300 hover:text-red-500 transition-colors">
+                                            <TrashIcon className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            <button
+                                onClick={handleAddCustomization}
+                                className="w-full py-2 border border-dashed border-indigo-300 rounded-lg text-xs font-bold text-indigo-600 hover:bg-indigo-50 transition-colors"
+                            >
+                                + Add Row
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Action Button */}
+                    <button
+                        onClick={handleAddToQuote}
+                        className={`w-full py-4 rounded-xl text-lg font-bold uppercase tracking-widest transition-all duration-300 shadow-lg hover:shadow-xl active:scale-[0.98] ${
+                            totalQuantity >= MOQ 
+                            ? 'bg-black text-white hover:bg-gray-800' 
+                            : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                        }`}
+                    >
+                        {totalQuantity >= MOQ ? 'Add to Quote Request' : `Need ${MOQ - totalQuantity} more to reach MOQ`}
+                    </button>
+
+                    {/* Product Tabs (Additional Info) */}
+                    <div className="pt-10 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {material && (
+                            <div className="space-y-3">
+                                <h4 className="text-xs font-bold uppercase tracking-widest text-gray-900">Fabric & Care</h4>
+                                <div className="p-4 bg-gray-50 rounded-lg group cursor-pointer" onClick={() => openCareModal(material.careImageUrl)}>
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <p className="font-bold text-gray-800 text-sm">{material.name}</p>
+                                            <p className="text-xs text-gray-500 mt-1 line-clamp-2">{material.description}</p>
+                                        </div>
+                                        <div className="w-10 h-10 flex-shrink-0 bg-white rounded-md border border-gray-200 p-1 group-hover:border-black transition-colors">
+                                            <img src={material.imageUrl} alt={material.name} className="w-full h-full object-contain" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        {product.details && (
+                             <div className="space-y-3">
+                                <h4 className="text-xs font-bold uppercase tracking-widest text-gray-900">Technical Specs</h4>
+                                <ul className="space-y-1.5">
+                                    {Object.entries(product.details).map(([key, value]) => (
+                                        <li key={key} className="flex justify-between text-xs py-1 border-b border-gray-50">
+                                            <span className="text-gray-500 font-medium">{key}</span>
+                                            <span className="text-gray-900 font-bold">{String(value)}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                             </div>
+                        )}
                     </div>
                 </div>
             </div>

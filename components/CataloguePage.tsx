@@ -5,11 +5,14 @@ import ProductGrid from './ProductGrid';
 import { useData } from '../context/DataContext';
 import { ViewGridSmallIcon, ViewGridLargeIcon, FilterIcon, CloseIcon } from './icons';
 import Accordion from './Accordion';
+import { useLocation } from 'react-router-dom';
 
 interface CataloguePageProps {
     products: Product[];
-    onProductClick: (product: Product) => void;
+    onProductClick: (product: Product, colorSlug?: string) => void;
     initialFilter: { type: 'group' | 'category' | 'gender'; value: string } | null;
+    onNavigate: (pageOrPath: string, filterValue?: string | null) => void;
+    toSlug: (str: string) => string;
 }
 
 const collectionImageMap: Record<string, string> = {
@@ -82,8 +85,11 @@ const FilterTag: React.FC<{ label: string; onRemove: () => void }> = ({ label, o
     </div>
 );
 
-const CataloguePage: React.FC<CataloguePageProps> = ({ products, onProductClick, initialFilter }) => {
+const CataloguePage: React.FC<CataloguePageProps> = ({ products, onProductClick, initialFilter, onNavigate, toSlug }) => {
     const { collections } = useData();
+    const location = useLocation();
+    const isCataloguePage = location.pathname === '/catalogue' || location.pathname === '/all-products';
+    
     const [sortOrder, setSortOrder] = useState<'default' | 'name-asc' | 'price-asc' | 'price-desc'>('default');
     const [layout, setLayout] = useState<'grid-sm' | 'grid-lg'>('grid-sm');
     const [isFilterVisible, setIsFilterVisible] = useState(false);
@@ -240,8 +246,8 @@ const CataloguePage: React.FC<CataloguePageProps> = ({ products, onProductClick,
     const clearFilters = () => {
         setSelectedFilters({ group: null, category: [], gender: [] });
         setShowBestsellersOnly(false);
-        if(!isCataloguePage) onNavigate('all-products');
-        else onNavigate('catalogue');
+        if(!isCataloguePage) onNavigate('all-products', null);
+        else onNavigate('catalogue', null);
     };
 
     const FilterPanel: React.FC<{ isMobile?: boolean }> = ({ isMobile }) => (

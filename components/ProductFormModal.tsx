@@ -6,6 +6,8 @@ import { generateProductDescription } from '../services/geminiService';
 
 const isHexColor = (hex: string): boolean => /^#?([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/i.test(hex);
 
+const toSlug = (str: string) => str.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-').replace(/[^a-z0-9-]/g, '');
+
 const getTextColorForBg = (hexColor: string): 'black' | 'white' => {
     if (!isHexColor(hexColor)) return 'black';
     try {
@@ -31,6 +33,7 @@ interface ProductFormModalProps {
 
 const emptyProduct: Omit<Product, 'id'> = {
     name: '',
+    urlSlug: '',
     imageUrls: {},
     url: '#',
     isBestseller: false,
@@ -41,6 +44,8 @@ const emptyProduct: Omit<Product, 'id'> = {
     categoryGroup: '',
     gender: 'Unisex',
     displayOrder: 0,
+    price: 0,
+    colors: [],
 };
 
 const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, productToEdit }) => {
@@ -106,11 +111,14 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
         
         if (target instanceof HTMLInputElement && target.type === 'checkbox') {
             setFormData(prev => ({ ...prev, [name]: target.checked }));
-        } else if (name === 'moq') {
-            setFormData(prev => ({ ...prev, moq: value === '' ? undefined : Number(value) }));
+        } else if (name === 'moq' || name === 'price') {
+            setFormData(prev => ({ ...prev, [name]: value === '' ? 0 : Number(value) }));
+        }
+        else if (name === 'name') {
+            setFormData(prev => ({ ...prev, name: value, urlSlug: toSlug(value) }));
         }
         else {
-            setFormData(prev => ({ ...prev, [name]: target.value }));
+            setFormData(prev => ({ ...prev, [name]: value }));
         }
     };
     
@@ -176,10 +184,16 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
         if (newColor.name && newColor.hex) {
             setFormData(prev => {
                  const newImageUrls = { ...prev.imageUrls, [newColor.name]: [] };
+                 const colorObj: Color = {
+                     name: newColor.name,
+                     hex: newColor.hex,
+                     urlSlug: toSlug(newColor.name)
+                 };
                 return {
                     ...prev,
                     imageUrls: newImageUrls,
-                    availableColors: [...prev.availableColors, newColor],
+                    availableColors: [...prev.availableColors, colorObj],
+                    colors: [...prev.colors, newColor.name]
                 }
             });
             // Automatically expand the newly added color
@@ -196,6 +210,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
                 ...prev,
                 imageUrls: newImageUrls,
                 availableColors: prev.availableColors.filter(c => c.name !== colorNameToRemove),
+                colors: prev.colors.filter(c => c !== colorNameToRemove)
             }
         });
         setExpandedColors(prev => {
@@ -464,6 +479,20 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({ isOpen, onClose, pr
                                 onChange={handleInputChange}
                                 min="1"
                                 placeholder="Default"
+                                className={darkInputStyles}
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="price" className="block text-sm font-medium text-gray-700">Price</label>
+                            <input
+                                type="number"
+                                name="price"
+                                id="price"
+                                value={('price' in formData && formData.price) ? formData.price : ''}
+                                onChange={handleInputChange}
+                                min="0"
+                                step="0.01"
+                                placeholder="0.00"
                                 className={darkInputStyles}
                             />
                         </div>
