@@ -16,7 +16,8 @@ import Button from './Button';
  * @property {(message: string) => void} showToast - Function to trigger a toast notification.
  * @property {Material[]} materials - List of all available materials.
  * @property {Product[]} allProducts - All products for finding related items.
- * @property {(product: Product) => void} onProductClick - Callback to navigate to another product.
+ * @property {(product: Product, colorSlug?: string) => void} onProductClick - Callback to navigate to another product.
+ * @property {string} [initialColorSlug] - The slug of the color to display initially.
  */
 interface ProductPageProps {
     product: Product;
@@ -24,8 +25,12 @@ interface ProductPageProps {
     showToast: (message: string) => void;
     materials: Material[];
     allProducts: Product[];
-    onProductClick: (product: Product) => void;
+    onProductClick: (product: Product, colorSlug?: string) => void;
+    initialColorSlug?: string;
 }
+
+// Helper to convert a string to a URL-friendly slug
+const toSlug = (str: string) => str.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-');
 
 /**
  * @description A redesigned, more compact file input component.
@@ -55,9 +60,9 @@ const FileInput: React.FC<{label: string, file: File | null, setFile: (file: Fil
  * @description The detailed product page, which acts as a configuration tool for adding items to a quote request.
  * Redesigned with a sticky configuration panel and a tabbed interface for a more compact and user-friendly experience.
  */
-const ProductPage: React.FC<ProductPageProps> = ({ product, onNavigate, showToast, materials, allProducts, onProductClick }) => {
+const ProductPage: React.FC<ProductPageProps> = ({ product, onNavigate, showToast, materials, allProducts, onProductClick, initialColorSlug }) => {
     // State for user's selections
-    const [selectedColor, setSelectedColor] = useState<Color | null>(product.availableColors[0] || null);
+    const [selectedColor, setSelectedColor] = useState<Color | null>(null);
     const [sizeQuantities, setSizeQuantities] = useState<{ [key: string]: number }>({});
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [designFile, setDesignFile] = useState<File | null>(null);
@@ -158,11 +163,11 @@ const ProductPage: React.FC<ProductPageProps> = ({ product, onNavigate, showToas
 
     // Effect to reset state when the product changes
     useEffect(() => {
-        const firstColor = product.availableColors[0] || null;
-        setSelectedColor(firstColor);
+        const initialColor = product.availableColors.find(c => toSlug(c.name) === initialColorSlug) || product.availableColors[0] || null;
+        setSelectedColor(initialColor);
         setCustomizations([{ name: '', number: '', size: '' }]);
         setSizeQuantities({});
-    }, [product]);
+    }, [product, initialColorSlug]);
 
     // Effect to update the active image when the displayed image set changes (e.g., due to color selection)
     useEffect(() => {
@@ -237,6 +242,11 @@ const ProductPage: React.FC<ProductPageProps> = ({ product, onNavigate, showToas
         showToast("Item added to quote!");
         setSizeQuantities({}); setLogoFile(null); setDesignFile(null); setCustomizations([{ name: '', number: '', size: '' }]);
     };
+
+    const handleColorSelect = (color: Color) => {
+        setSelectedColor(color);
+        onProductClick(product, toSlug(color.name));
+    };
     
     // FIX: Use React.FC to correctly type the component and handle props like `key`.
     const ColorSwatch: React.FC<{ color: Color }> = ({ color }) => {
@@ -246,7 +256,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ product, onNavigate, showToas
         return (
             <button
                 key={color.name}
-                onClick={() => setSelectedColor(color)}
+                onClick={() => handleColorSelect(color)}
                 className={`relative w-20 h-20 rounded-md border-2 overflow-hidden transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black ${isSelected ? 'border-black' : 'border-gray-200 hover:border-gray-400'}`}
                 aria-label={`Select color ${color.name}`}
             >
