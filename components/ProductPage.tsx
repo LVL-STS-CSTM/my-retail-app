@@ -1,18 +1,18 @@
 
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { useProductData } from '../context/ProductContext';
+import { useProducts } from '../context/ProductContext';
 import ProductDetail from './ProductDetail';
 import ProductGrid from './ProductGrid';
 
 const ProductPage: React.FC = () => {
     const { productId } = useParams<{ productId: string }>();
-    const { products } = useProductData();
+    const { products } = useProducts();
 
     const selectedProduct = products.find(p => p.id === productId);
 
     const relatedProducts = products
-        .filter(p => p.category === selectedProduct?.category && p.id !== selectedProduct?.id)
+        .filter(p => p.category === selectedProduct?.category && p.id !== selected-product?.id)
         .slice(0, 4);
 
     if (!selectedProduct) {
