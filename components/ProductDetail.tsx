@@ -1,13 +1,13 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { useProductData } from '../context/ProductContext';
+import { useProducts } from '../context/ProductContext';
 import { useCart } from '../context/CartContext';
 import { ProductColor } from '../types';
 
 const ProductDetail: React.FC = () => {
     const { productId } = useParams<{ productId: string }>();
-    const { products } = useProductData();
+    const { products } = useProducts();
     const { addToCart } = useCart();
 
     const product = useMemo(() => products.find(p => p.id === productId), [products, productId]);
