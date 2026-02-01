@@ -35,24 +35,8 @@ const DATA_TO_SEED = {
 };
 
 export const onRequestGet = async (context: { env: Env; request: Request }) => {
-    const { env, request } = context;
-    const authHeader = request.headers.get('Authorization');
+    const { env } = context;
     
-    // Auth check against KV
-    const storedCredsRaw = await env.CONTENT_KV.get('credential');
-    if (!storedCredsRaw) {
-        return new Response('Unauthorized: Credentials not found in KV. Please set the "credential" key manually first.', { status: 401 });
-    }
-    const storedCreds = JSON.parse(storedCredsRaw);
-    const expected = `Basic ${btoa(`${storedCreds.username}:${storedCreds.password}`)}`;
-
-    if (authHeader !== expected) {
-        return new Response('Unauthorized', { 
-            status: 401, 
-            headers: { 'WWW-Authenticate': 'Basic' } 
-        });
-    }
-
     try {
         for (const [key, data] of Object.entries(DATA_TO_SEED)) {
             await env.CONTENT_KV.put(key, JSON.stringify(data));

@@ -1,11 +1,10 @@
 
 // functions/api/gemini.ts
-import { GoogleGenerativeAI, Content, Part } from "@google/generative-ai";
+import { GoogleGenerativeAI, Content } from "@google/generative-ai";
 
-// This is a Vercel Edge Function
-export const config = {
-  runtime: 'edge',
-};
+interface Env {
+  GEMINI_API_KEY: string;
+}
 
 // System instruction for the AI model
 const systemInstruction = `
@@ -30,13 +29,11 @@ When a user asks for a recommendation:
 12. Your knowledge is limited to the provided product data. Do not make up products or features.
 `;
 
-export default async function handler(req: Request) {
-  if (req.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405 });
-  }
+export const onRequestPost: PagesFunction<Env> = async (context) => {
+  const { request, env } = context;
 
   try {
-    const { history, products } = await req.json();
+    const { history, products } = await request.json();
 
     if (!history || !Array.isArray(history) || history.length === 0) {
       return new Response('Invalid chat history', { status: 400 });
@@ -45,18 +42,21 @@ export default async function handler(req: Request) {
       return new Response('Invalid products data', { status: 400 });
     }
 
-    const apiKey = '';
+    const apiKey = env.GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error("GEMINI_API_KEY is not set in environment variables.");
+      return new Response(JSON.stringify({ error: 'Server configuration error: Missing API Key.' }), { status: 500 });
+    }
     
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-pro-preview", // Use a valid and available model name
+      model: "gemini-1.5-pro-preview",
       systemInstruction: `${systemInstruction}
 
 Here is the product data in JSON format:
 ${JSON.stringify(products, null, 2)}`,
     });
 
-    // Vercel Edge functions time out after 15 seconds. Let's be safe.
     const timeout = 14000;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -81,7 +81,7 @@ ${JSON.stringify(products, null, 2)}`,
 
     const result = await chat.sendMessage(userMessage, { signal: controller.signal });
     
-    clearTimeout(timeoutId); // Clear the timeout if the request succeeds
+    clearTimeout(timeoutId);
 
     const response = result.response;
     const text = response.text();

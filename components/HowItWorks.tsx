@@ -28,10 +28,10 @@ const useOnScreen = (ref: React.RefObject<any>, rootMargin: string = '0px 0px -2
 
 
 const steps = [
-    { icon: <ChatIcon className="w-10 h-10" />, title: "Consult & Quote", description: "Share your vision with our experts. We'll provide a detailed quote and roadmap for your project." },
+    { icon: <ChatIcon className="w-10 h-10" />, title: "Consult & Quote", description: "Share your vision with our staff. We listen closely to your needs, propose initial design ideas, and then prepare a detailed and fair quotation based on the scope. Rest assured, our pricing is transparent, flexible, and always open for discussion." },
     { icon: <DesignIcon className="w-10 h-10" />, title: "Design & Mockup", description: "Our designers create digital mockups. We'll refine them until they're perfect and get your final approval." },
     { icon: <ProductionIcon className="w-10 h-10" />, title: "Produce & Perfect", description: "Our skilled artisans use state-of-the-art technology to bring your design to life with meticulous attention to detail." },
-    { icon: <LogisticsIcon className="w-10 h-10" />, title: "Deliver & Delight", description: "We conduct a final quality check, then package and ship your order, ensuring it arrives safely and on time." }
+    { icon: <LogisticsIcon className="w-10 h-10" />, title: "Assess & Deliver", description: "We conduct a final quality check, then package and ship your order, ensuring it arrives safely and on time." }
 ];
 
 const HowItWorks: React.FC = () => {
